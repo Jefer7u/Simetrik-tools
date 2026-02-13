@@ -34,11 +34,10 @@ def formatear_reglas_segmento(segmento, col_map):
                 col_name = col_map.get(col_id, f"ID_{col_id}")
                 op = str(rule.get('operator', '=')).lower()
                 val = str(rule.get('value', ''))
-                if 'null' in op: set_logic.append(f"[{col_name} {op}]")
-                else: set_logic.append(f"[{col_name} {op} {val}]")
+                set_logic.append(f"[{col_name} {op} {val}]" if 'null' not in op else f"[{col_name} {op}]")
             if set_logic: texto_logica.append(f"({f' {condicion_set} '.join(set_logic)})")
     except: return "Error en filtros"
-    return " OR ".join(texto_logica) if texto_logica else "Sin filtros (Trae todo)"
+    return " OR ".join(texto_logica) if texto_logica else "Sin filtros"
 
 def limpiar_nombre_hoja(nombre, nombres_usados):
     invalido = [':', '\\', '/', '?', '*', '[', ']']
@@ -55,108 +54,106 @@ def limpiar_nombre_hoja(nombre, nombres_usados):
 
 def procesar_json(json_file):
     data = json.load(json_file)
-    
-    # Mapeos Base
     res_map = {}
     col_map = {}
     resources = data.get('resources') or []
     nodes = data.get('nodes') or []
 
+    # Mapeo inicial para IDs de recursos y nombres de columnas
     for res in resources:
         r_id = res.get('export_id') or res.get('_id')
         res_map[r_id] = res.get('name', 'Sin Nombre')
         for col in (res.get('columns') or []):
             col_map[col.get('export_id')] = col.get('label') or col.get('name')
 
-    # LÓGICA DE RELACIONES (Basada en el campo 'nodes' del JSON)
+    # Lógica de Relaciones
     relaciones = {r.get('export_id'): {"parents": [], "children": []} for r in resources}
     for node in nodes:
-        target = node.get('target')
-        sources = node.get('source')
+        target, sources = node.get('target'), node.get('source')
         if target and sources:
             source_list = sources if isinstance(sources, list) else [sources]
             for s_id in source_list:
-                if target in relaciones: 
-                    relaciones[target]["parents"].append(res_map.get(s_id, f"ID_{s_id}"))
-                if s_id in relaciones: 
-                    relaciones[s_id]["children"].append(res_map.get(target, f"ID_{target}"))
+                if target in relaciones: relaciones[target]["parents"].append(res_map.get(s_id, f"ID_{s_id}"))
+                if s_id in relaciones: relaciones[s_id]["children"].append(res_map.get(target, f"ID_{target}"))
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         nombres_usados = set()
         nombres_hojas_map = [limpiar_nombre_hoja(r.get('name', 'Resource'), nombres_usados) for r in resources]
 
-        # --- HOJA INICIO (Índice con Tipo y Relación) ---
+        # --- HOJA INICIO ---
         ws_inicio = writer.book.create_sheet("Inicio")
-        ws_inicio['A1'] = "RESUMEN DE ESTRUCTURA SIMETRIK"
-        aplicar_estilos_peya(ws_inicio, 1, 1, 1, 4, True)
+        ws_inicio['A1'] = "DOCUMENTACIÓN TÉCNICA SIMETRIK"
+        aplicar_estilos_peya(ws_inicio, 1, 1, 1, 5, True)
         
-        ws_inicio.cell(5, 1, "RECURSO")
-        ws_inicio.cell(5, 2, "TIPO")
-        ws_inicio.cell(5, 3, "PROVIENE DE (INPUTS)")
-        ws_inicio.cell(5, 4, "LINK")
-        aplicar_estilos_peya(ws_inicio, 5, 5, 1, 4, True)
+        headers_inicio = ["ID RECURSO", "RECURSO", "TIPO", "ENTRADAS (PARENTS)", "LINK"]
+        for ci, h in enumerate(headers_inicio, 1): ws_inicio.cell(5, ci, h)
+        aplicar_estilos_peya(ws_inicio, 5, 5, 1, 5, True)
         
         for i, r in enumerate(resources):
-            row = 6 + i
-            e_id = r.get('export_id')
-            ws_inicio.cell(row, 1, r.get('name'))
-            ws_inicio.cell(row, 2, r.get('resource_type', 'N/A').replace('_', ' ').upper())
+            row, e_id = 6 + i, r.get('export_id')
+            ws_inicio.cell(row, 1, e_id)
+            ws_inicio.cell(row, 2, r.get('name'))
+            ws_inicio.cell(row, 3, r.get('resource_type', 'N/A').upper())
+            ws_inicio.cell(row, 4, ", ".join(relaciones.get(e_id, {}).get('parents', [])) or "Fuente Primaria")
             
-            padres = ", ".join(relaciones.get(e_id, {}).get('parents', []))
-            ws_inicio.cell(row, 3, padres if padres else "Fuente Primaria")
-            
-            link = ws_inicio.cell(row, 4, "Ir a Hoja")
-            link.hyperlink = f"#'{nombres_hojas_map[i]}'!A1"
-            link.style = "Hyperlink"
-            aplicar_estilos_peya(ws_inicio, row, row, 1, 3, False)
+            link = ws_inicio.cell(row, 5, "Ir a Hoja")
+            link.hyperlink, link.style = f"#'{nombres_hojas_map[i]}'!A1", "Hyperlink"
+            aplicar_estilos_peya(ws_inicio, row, row, 1, 4, False)
 
-        ws_inicio.column_dimensions['A'].width = 40
-        ws_inicio.column_dimensions['B'].width = 20
-        ws_inicio.column_dimensions['C'].width = 50
+        for col_letter in ['A', 'B', 'C', 'D']: ws_inicio.column_dimensions[col_letter].width = 25
 
-        # --- HOJAS DE RECURSOS ---
-        progress_bar = st.progress(0)
+        # --- HOJAS DE DETALLE ---
         for i, res in enumerate(resources):
-            progress_bar.progress(int((i + 1) / len(resources) * 100))
             e_id = res.get('export_id')
             ws = writer.book.create_sheet(nombres_hojas_map[i])
             
-            # Encabezado
+            # Info Completa del Recurso
             ws.cell(1, 1, f"RECURSO: {res.get('name')}").font = Font(size=14, bold=True, color=COLOR_PEYA_MAIN)
-            ws.cell(2, 1, f"TIPO: {res.get('resource_type', 'N/A').upper()}").font = Font(italic=True)
+            ws.cell(2, 1, f"ID: {e_id} | Tipo: {res.get('resource_type', 'N/A').upper()}")
+            ws.cell(3, 1, f"Descripción: {res.get('description') or 'Sin descripción'}")
             
-            curr = 4
-            # Sección Relaciones
-            ws.cell(curr, 1, "RELACIONES EN EL FLUJO").font = Font(bold=True, color=COLOR_PEYA_MAIN); curr += 1
-            ws.cell(curr, 1, "Inputs (Padres):"); ws.cell(curr, 2, ", ".join(relaciones[e_id]["parents"]) or "Ninguno")
-            curr += 1
-            ws.cell(curr, 1, "Outputs (Hijos):"); ws.cell(curr, 2, ", ".join(relaciones[e_id]["children"]) or "Ninguno")
-            aplicar_estilos_peya(ws, curr-1, curr, 1, 2, False)
-            curr += 2
+            curr = 5
+            # Relaciones detalladas
+            ws.cell(curr, 1, "CONECTIVIDAD EN EL FLUJO").font = Font(bold=True, color=COLOR_PEYA_MAIN); curr += 1
+            ws.cell(curr, 1, "Inputs:"); ws.cell(curr, 2, ", ".join(relaciones[e_id]["parents"]) or "Ninguno"); curr += 1
+            ws.cell(curr, 1, "Outputs:"); ws.cell(curr, 2, ", ".join(relaciones[e_id]["children"]) or "Ninguno"); curr += 2
 
-            # Columnas
-            ws.cell(curr, 1, "DETALLE DE COLUMNAS").font = Font(bold=True, color=COLOR_PEYA_MAIN); curr += 1
-            headers = ["COLUMNA", "TIPO", "TRANSFORMACIÓN"]
+            # Columnas con detección de Buscar V
+            ws.cell(curr, 1, "ESTRUCTURA DE COLUMNAS").font = Font(bold=True, color=COLOR_PEYA_MAIN); curr += 1
+            headers = ["COLUMNA", "TIPO DATO", "TRANSFORMACIONES / BUSCAR V"]
             for ci, h in enumerate(headers, 1): ws.cell(curr, ci, h)
             aplicar_estilos_peya(ws, curr, curr, 1, 3, True); curr += 1
             
             for col in (res.get('columns') or []):
-                tr = " | ".join([t.get('query','') for t in (col.get('transformations') or []) if t.get('query')])
-                vals = [col.get('label'), col.get('data_format'), tr]
+                trans_list = []
+                # Lógica para extraer info de v_lookup
+                v_info = col.get('v_lookup')
+                if v_info:
+                    v_set = v_info.get('v_lookup_set', {})
+                    origen_nombre = res_map.get(v_set.get('origin_source_id'), "Desconocido")
+                    reglas = v_set.get('rules', [])
+                    llaves = [f"[{col_map.get(rule.get('column_a_id'), 'A')} == {col_map.get(rule.get('column_b_id'), 'B')}]" for rule in reglas]
+                    trans_list.append(f"🔍 BUSCAR V desde: '{origen_nombre}' | Llaves: {' & '.join(llaves)}")
+                
+                # Transformaciones normales
+                for t in (col.get('transformations') or []):
+                    if t.get('query'): trans_list.append(f"⚙️ {t.get('query')}")
+                
+                vals = [col.get('label'), col.get('data_format'), " \n".join(trans_list)]
                 for ci, v in enumerate(vals, 1): ws.cell(curr, ci, v)
                 aplicar_estilos_peya(ws, curr, curr, 1, 3, False); curr += 1
             
-            ws.column_dimensions['A'].width = 35; ws.column_dimensions['C'].width = 60
+            ws.column_dimensions['A'].width = 30; ws.column_dimensions['C'].width = 80
 
         if "Sheet" in writer.book.sheetnames: writer.book.remove(writer.book["Sheet"])
     output.seek(0)
     return output
 
-# --- INTERFAZ ---
-st.markdown(f"<h1 style='color: #{COLOR_PEYA_MAIN};'>Generador PeYa Simetrik</h1>", unsafe_allow_html=True)
-file = st.file_uploader("Sube el JSON exportado de Simetrik", type=['json'])
+# --- INTERFAZ STREAMLIT ---
+st.markdown(f"<h1 style='color: #{COLOR_PEYA_MAIN};'>Simetrik Doc Generator Pro</h1>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("Sube el JSON de Simetrik", type=['json'])
 
-if file and st.button("🚀 Generar Excel"):
-    out = procesar_json(file)
-    st.download_button("📥 Descargar Reporte", out, f"Reporte_Simetrik_{datetime.now().strftime('%H%M')}.xlsx")
+if uploaded_file and st.button("🚀 Generar Documentación"):
+    excel_data = procesar_json(uploaded_file)
+    st.download_button("📥 Descargar Excel", excel_data, f"Simetrik_Report_{datetime.now().strftime('%H%M')}.xlsx")
