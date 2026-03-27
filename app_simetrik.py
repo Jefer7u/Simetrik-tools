@@ -20,14 +20,14 @@ C = {
 }
 
 RT_LABEL = {
-    "native":                  "📥 Fuente",
-    "source_union":            "🔗 Unión de Fuentes",
-    "source_group":            "📊 Agrupación (Group By)",
-    "reconciliation":          "⚖️ Conciliación Estándar",
-    "advanced_reconciliation": "🔬 Conciliación Avanzada",
-    "consolidation":           "🗂️ Consolidación",
-    "resource_join":           "🔀 Join de Recursos",
-    "cumulative_balance":      "📈 Balance Acumulado",
+    "native":                  "📥 Source",
+    "source_union":            "🔗 Source Union",
+    "source_group":            "📊 Group By (Aggregation)",
+    "reconciliation":          "⚖️ Standard Reconciliation",
+    "advanced_reconciliation": "🔬 Advanced Reconciliation",
+    "consolidation":           "🗂️ Consolidation",
+    "resource_join":           "🔀 Resource Join",
+    "cumulative_balance":      "📈 Cumulative Balance",
 }
 
 RT_COLOR = {
@@ -161,7 +161,7 @@ def fmt_filter_rules(rules, col_map):
         op   = r.get('operator', '')
         val  = r.get('value', '')
         lines.append(f"{cond} [{col_name}] {op} {val}".strip())
-    return "\n".join(lines) if lines else "Sin filtros adicionales"
+    return "\n".join(lines) if lines else "No additional filters"
 
 
 def parse_transformation_logic(col, res_map, col_map):
@@ -177,15 +177,15 @@ def parse_transformation_logic(col, res_map, col_map):
             " = B." + col_map.get(r.get('column_b_id'), '?')
             for r in rules
         )
-        lines.append("BUSCAR V EN: " + origin)
+        lines.append("VLOOKUP IN: " + origin)
         if keys:
-            lines.append("CLAVE MATCH: " + keys)
+            lines.append("MATCH KEY: " + keys)
     parents = [t for t in (col.get('transformations') or []) if t.get('is_parent')]
     for t in parents:
         q = (t.get('query') or '').strip()
         if q and q.upper() != 'N/A':
-            lines.append("FÓRMULA: " + q)
-    return "\n".join(lines) if lines else "Dato directo / heredado"
+            lines.append("FORMULA: " + q)
+    return "\n".join(lines) if lines else "Direct / inherited value"
 
 
 def parse_std_reconciliation(recon, res_map, col_map, seg_map):
@@ -291,7 +291,7 @@ def parse_adv_reconciliation(adv, res_map, col_map, seg_map, meta_map):
             if meta_id:
                 seg_val = meta_map.get(meta_id, f"ID:{meta_id}")
             else:
-                seg_val = "(recurso completo sin segmentar)"
+                seg_val = "(whole resource (no segmentation))"
             sweep.append(f"Lado {p}: {seg_val}")
 
         rule_sets.append({
@@ -397,13 +397,13 @@ def generar_excel(data, selected_ids):
 
         ws.merge_cells('A2:H2')
         c = ws.cell(2, 1,
-            f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}   |   "
-            f"Recursos documentados: {len(resources)}")
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}   |   "
+            f"Resources documented: {len(resources)}")
         sc(c, bg=C["dark"], color=C["white"], size=9, ha='center', va='center', wrap=False)
         ws.row_dimensions[2].height = 15
 
-        idx_hdrs = ["#", "ID", "NOMBRE DEL RECURSO", "TIPO",
-                    "PROVIENE DE", "ALIMENTA A", "ENCADENADA", "LINK"]
+        idx_hdrs = ["#", "ID", "RESOURCE NAME", "TIPO",
+                    "SOURCE FROM", "FEEDS INTO", "CHAINED", "LINK"]
         for i, h in enumerate(idx_hdrs, 1):
             hdr(ws.cell(4, i, h), h, bg=C["dark"])
         ws.row_dimensions[4].height = 20
@@ -417,9 +417,9 @@ def generar_excel(data, selected_ids):
             bg      = C["grey"] if row_n % 2 == 0 else C["white"]
 
             vals = [row_n - 4, eid, res.get('name', ''), RT_LABEL.get(rt, rt),
-                    ", ".join(rels[eid]["parents"]) or "— origen",
-                    ", ".join(rels[eid]["children"]) or "— fin de flujo",
-                    "Sí" if chained else "No"]
+                    ", ".join(rels[eid]["parents"]) or "— origin",
+                    ", ".join(rels[eid]["children"]) or "— end of flow",
+                    "Yes" if chained else "No"]
             for col_n, val in enumerate(vals, 1):
                 c = ws.cell(row_n, col_n, val)
                 sc(c, bg=bg, size=9, va='center', wrap=False)
@@ -456,27 +456,27 @@ def generar_excel(data, selected_ids):
             ws.row_dimensions[row].height = 30
             row += 1
 
-            row = meta_row(ws, row, "ID Recurso",  eid,  cols=COLS)
-            row = meta_row(ws, row, "Tipo",        RT_LABEL.get(rt, rt), cols=COLS)
-            row = meta_row(ws, row, "Proviene de",
-                           ", ".join(rels[eid]["parents"]) or "Origen", cols=COLS)
-            row = meta_row(ws, row, "Alimenta a",
-                           ", ".join(rels[eid]["children"]) or "Fin de flujo", cols=COLS)
+            row = meta_row(ws, row, "Resource ID",  eid,  cols=COLS)
+            row = meta_row(ws, row, "Type",        RT_LABEL.get(rt, rt), cols=COLS)
+            row = meta_row(ws, row, "Source from",
+                           ", ".join(rels[eid]["parents"]) or "Origin", cols=COLS)
+            row = meta_row(ws, row, "Feeds into",
+                           ", ".join(rels[eid]["children"]) or "End of flow", cols=COLS)
             row += 1
 
             # ── CONCILIACIÓN ESTÁNDAR ──────────────────────────────────────────
             std = parse_std_reconciliation(
                 res.get('reconciliation'), res_map, col_map, seg_map)
             if std:
-                row = section_title(ws, row, "⚖️  REGLAS DE CONCILIACIÓN ESTÁNDAR",
+                row = section_title(ws, row, "⚖️  STANDARD RECONCILIATION RULES",
                                     bg=C["red"], cols=COLS)
 
                 # Grupos conciliables activos (A y B)
-                row = section_title(ws, row, "  GRUPOS CONCILIABLES ACTIVOS",
+                row = section_title(ws, row, "  ACTIVE RECONCILABLE GROUPS",
                                     bg=C["rose"], cols=COLS)
                 for col_n, h in enumerate(
-                        ["LADO", "RECURSO", "GRUPO CONCILIABLE (ACTIVO)",
-                         "FILTROS DEL GRUPO"], 1):
+                        ["SIDE", "RESOURCE", "RECONCILABLE GROUP (ACTIVE)",
+                         "GROUP FILTERS"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg=C["rose"])
                 ws.merge_cells(f'D{row}:E{row}')
                 ws.row_dimensions[row].height = 18
@@ -497,15 +497,15 @@ def generar_excel(data, selected_ids):
                     row += 1
                 row += 1
 
-                row = meta_row(ws, row, "Conciliación encadenada",
-                               "Sí" if std['is_chained'] else "No", cols=COLS)
+                row = meta_row(ws, row, "Chained reconciliation",
+                               "Yes" if std['is_chained'] else "No", cols=COLS)
                 row += 1
 
                 # Rule sets
-                row = section_title(ws, row, "  RULE SETS DE MATCHING",
+                row = section_title(ws, row, "  MATCHING RULE SETS",
                                     bg="C62828", cols=COLS)
                 for col_n, h in enumerate(
-                        ["POS.", "NOMBRE DEL RULE SET", "REGLAS  (A vs B)"], 1):
+                        ["POS.", "RULE SET NAME", "RULES  (A vs B)"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg="C62828")
                 ws.merge_cells(f'C{row}:E{row}')
                 ws.row_dimensions[row].height = 18
@@ -527,22 +527,22 @@ def generar_excel(data, selected_ids):
             adv_parsed = parse_adv_reconciliation(
                 res.get('advanced_reconciliation'), res_map, col_map, seg_map, meta_map)
             if adv_parsed:
-                row = section_title(ws, row, "🔬  REGLAS DE CONCILIACIÓN AVANZADA",
+                row = section_title(ws, row, "🔬  ADVANCED RECONCILIATION RULES",
                                     bg=C["purple"], cols=COLS)
 
                 # Grupos conciliables + segmentos internos
-                row = section_title(ws, row, "  GRUPOS CONCILIABLES Y SEGMENTOS INTERNOS",
+                row = section_title(ws, row, "  RECONCILABLE GROUPS & INTERNAL SEGMENTS",
                                     bg="6A1B9A", cols=COLS)
                 for col_n, h in enumerate(
-                        ["LADO", "RECURSO", "GRUPO CONCILIABLE",
-                         "FILTROS DEL GRUPO", "SEGMENTOS INTERNOS"], 1):
+                        ["SIDE", "RESOURCE", "RECONCILABLE GROUP",
+                         "GROUP FILTERS", "INTERNAL SEGMENTS"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg="6A1B9A")
                 ws.row_dimensions[row].height = 18
                 row += 1
 
                 for i, g in enumerate(adv_parsed['groups']):
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
-                    segs_txt = "\n".join(g['segments']) if g['segments'] else "(sin segmentación interna)"
+                    segs_txt = "\n".join(g['segments']) if g['segments'] else "(no internal segmentation)"
                     n_lines = max(g['group_filters'].count('\n') + 1,
                                   len(g['segments']) if g['segments'] else 1)
                     c1 = ws.cell(row, 1, g['prefix'])
@@ -557,11 +557,11 @@ def generar_excel(data, selected_ids):
                 row += 1
 
                 # Rule sets avanzados con segmentos resueltos
-                row = section_title(ws, row, "  RULE SETS (SEGMENTO A vs SEGMENTO B)",
+                row = section_title(ws, row, "  RULE SETS (SEGMENT A vs SEGMENT B)",
                                     bg="4A148C", cols=COLS)
                 for col_n, h in enumerate(
-                        ["POS.", "NOMBRE / TIPO", "REGLAS  (A vs B)",
-                         "SEGMENTO LADO A", "SEGMENTO LADO B"], 1):
+                        ["POS.", "NAME / TYPE", "RULES  (A vs B)",
+                         "SEGMENTO SIDE A", "SEGMENT SIDE B"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg="4A148C")
                 ws.row_dimensions[row].height = 18
                 row += 1
@@ -596,24 +596,24 @@ def generar_excel(data, selected_ids):
             sg = res.get('source_group')
             if sg:
                 row = section_title(ws, row,
-                    "📊  CONFIGURACIÓN DE AGRUPACIÓN (GROUP BY)",
+                    "📊  GROUP BY CONFIGURATION (AGGREGATION)",
                     bg=C["amber"], cols=COLS)
                 group_cols, agg_vals = parse_source_group(sg, col_map)
-                row = meta_row(ws, row, "GROUP BY (dimensiones)",
+                row = meta_row(ws, row, "GROUP BY (dimensions)",
                                " | ".join(group_cols) or "—",
                                cols=COLS, bg_val="FFF3E0")
                 agg_str = "  |  ".join(f"{fn}( {col} )" for fn, col in agg_vals)
-                row = meta_row(ws, row, "Agregaciones (métricas)",
+                row = meta_row(ws, row, "Aggregations (metrics)",
                                agg_str or "—", cols=COLS, bg_val="FFF3E0")
-                row = meta_row(ws, row, "Acumulativo",
-                               "Sí" if sg.get('is_accumulative') else "No", cols=COLS)
+                row = meta_row(ws, row, "Accumulative",
+                               "Yes" if sg.get('is_accumulative') else "No", cols=COLS)
                 row += 1
 
             # ── SOURCE UNION ──────────────────────────────────────────────────
             su = res.get('source_union')
             if su:
                 row = section_title(ws, row,
-                    "🔗  CONFIGURACIÓN DE UNIÓN DE FUENTES",
+                    "🔗  SOURCE UNION CONFIGURATION",
                     bg=C["teal"], cols=COLS)
                 for us in (su.get('union_segments') or []):
                     label = "TRIGGER" if us.get('is_trigger') else "No trigger"
@@ -624,14 +624,14 @@ def generar_excel(data, selected_ids):
                                    cols=COLS, bg_val="E0F2F1")
                 row += 1
 
-            # ── GRUPOS CONCILIABLES DEL RECURSO ──────────────────────────────
+            # ── GRUPOS CONCILIABLES DEL RESOURCE ──────────────────────────────
             segs_all = parse_segment_filters(res.get('segments', []), col_map)
             if segs_all:
                 row = section_title(ws, row,
-                    "🔍  GRUPOS CONCILIABLES DEL RECURSO",
+                    "🔍  GRUPOS CONCILIABLES DEL RESOURCE",
                     bg=C["slate"], cols=COLS)
                 for col_n, h in enumerate(
-                        ["NOMBRE DEL GRUPO", "FILTROS APLICADOS"], 1):
+                        ["GROUP NAME", "APPLIED FILTERS"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg=C["slate"])
                 ws.merge_cells(f'B{row}:E{row}')
                 ws.row_dimensions[row].height = 18
@@ -652,11 +652,11 @@ def generar_excel(data, selected_ids):
                              key=lambda x: x.get('position', 0))
             if columns:
                 row = section_title(ws, row,
-                    "📋  CONFIGURACIÓN DE COLUMNAS",
+                    "📋  COLUMN CONFIGURATION",
                     bg=C["blue"], cols=COLS)
                 for col_n, h in enumerate(
-                        ["LABEL / NOMBRE", "TIPO DATO", "TIPO COL.",
-                         "LÓGICA · FÓRMULA · BUSCAR V"], 1):
+                        ["LABEL / NAME", "DATA TYPE", "COL. TYPE",
+                         "LOGIC · FORMULA · VLOOKUP"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg=C["blue"])
                 ws.merge_cells(f'D{row}:E{row}')
                 ws.row_dimensions[row].height = 18
@@ -709,11 +709,11 @@ st.markdown("""
 </div>""", unsafe_allow_html=True)
 
 st.write("")
-up = st.file_uploader("Subí el JSON exportado desde Simetrik", type=['json'],
-                      help="En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON")
+up = st.file_uploader("Upload the JSON exported from Simetrik", type=['json'],
+                      help="In Simetrik: Flow → ⚙️ Settings → Export JSON")
 
 if not up:
-    st.info("👆 Subí un JSON para comenzar.")
+    st.info("👆 Upload a JSON to get started.")
     st.stop()
 
 try:
@@ -738,15 +738,15 @@ rels_all = build_relations(resources_unique, nodes, res_map)
 
 # ── PASO 1: SELECCIÓN ─────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("### 1️⃣  Seleccioná los recursos a documentar")
+st.markdown("### 1️⃣  Select resources to document")
 
 c1, c2 = st.columns([3, 1])
-c1.caption(f"El JSON contiene **{len(resources_unique)}** recursos únicos, ordenados por tipo e ID.")
+c1.caption(f"JSON contains **{len(resources_unique)}** unique resources, sorted by type and ID.")
 
 all_types = sorted({r.get('resource_type', '') for r in resources_unique},
                    key=lambda x: RT_ORDER.get(x, 99))
 filtro_tipo = c2.multiselect(
-    "Filtrar tipo", options=all_types,
+    "Filter by type", options=all_types,
     format_func=lambda x: RT_LABEL.get(x, x),
     default=all_types, label_visibility="collapsed"
 )
@@ -799,22 +799,22 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
 # ── PASO 2: GENERAR ───────────────────────────────────────────────────────────
 st.markdown("---")
 n_sel = len(selected_ids)
-st.markdown(f"### 2️⃣  Generar Excel  ·  **{n_sel}** recurso{'s' if n_sel != 1 else ''} seleccionado{'s' if n_sel != 1 else ''}")
+st.markdown(f"### 2️⃣  Generate Excel  ·  **{n_sel}** recurso{'s' if n_sel != 1 else ''} seleccionado{'s' if n_sel != 1 else ''}")
 
 if not selected_ids:
-    st.warning("Seleccioná al menos un recurso para continuar.")
+    st.warning("Select at least one resource to continue.")
     st.stop()
 
 nombre_dl = f"{os.path.splitext(up.name)[0]}_DOC_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
 
-if st.button("🚀  GENERAR EXCEL PROFESIONAL", type="primary", use_container_width=True):
-    with st.spinner("Procesando… resolviendo grupos conciliables y segmentos"):
+if st.button("🚀  GENERATE PROFESSIONAL EXCEL", type="primary", use_container_width=True):
+    with st.spinner("Processing… resolving reconcilable groups and segments"):
         try:
             excel_bytes = generar_excel(data, selected_ids)
-            st.success(f"✅ ¡Listo! {n_sel} recursos documentados.")
+            st.success(f"✅ Done! {n_sel} resources documented.")
             st.balloons()
             st.download_button(
-                label="📥  Descargar Excel",
+                label="📥  Download Excel",
                 data=excel_bytes,
                 file_name=nombre_dl,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -827,4 +827,4 @@ if st.button("🚀  GENERAR EXCEL PROFESIONAL", type="primary", use_container_wi
             st.code(traceback.format_exc())
 
 st.markdown("---")
-st.caption("Simetrik Documentation Pro · PeYa Finance · v2.1 ES")
+st.caption("Simetrik Documentation Pro · PeYa Finance · v2.1 EN")
