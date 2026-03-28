@@ -958,7 +958,7 @@ if n_sel > 0:
             rt = r.get('resource_type','')
             tipos_sel[rt] = tipos_sel.get(rt, 0) + 1
     resumen_badges = " &nbsp; ".join(
-        f"<span style='background:#{RT_COLOR.get(rt,\"444\")};color:white;"
+        f"<span style='background:#{RT_COLOR.get(rt, '444')};""color:white;'>"
         f"padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:700'>"
         f"{RT_LABEL.get(rt,rt)} ({cnt})</span>"
         for rt, cnt in sorted(tipos_sel.items(), key=lambda x: RT_ORDER.get(x[0],99))
