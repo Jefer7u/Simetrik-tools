@@ -182,9 +182,6 @@ def parse_transformation_logic(col, res_map, col_map):
             lines.append("TIPO: Numeración de duplicado (número de fila del registro dentro del grupo)")
 
         # Registro que se conserva
-        keep = "último registro del grupo" if uniq_type == 2 else "primer registro del grupo"
-        lines.append("CONSERVA: " + keep)
-
         # ORDER BY (columna y dirección)
         if order_keys:
             order_parts = []
@@ -443,7 +440,7 @@ def generar_excel(data, selected_ids):
         ws.row_dimensions[2].height = 15
 
         idx_hdrs = ["#", "ID", "NOMBRE DEL RECURSO", "TIPO",
-                    "PROVIENE DE", "ALIMENTA A", "ENCADENADA", "LINK"]
+                    "PROVIENE DE", "ALIMENTA A", "LINK"]
         for i, h in enumerate(idx_hdrs, 1):
             hdr(ws.cell(4, i, h), h, bg=C["dark"])
         ws.row_dimensions[4].height = 20
@@ -451,15 +448,11 @@ def generar_excel(data, selected_ids):
         for row_n, res in enumerate(resources, 5):
             eid     = res.get('export_id')
             rt      = res.get('resource_type', '')
-            recon   = res.get('reconciliation') or {}
-            adv     = res.get('advanced_reconciliation') or {}
-            chained = recon.get('is_chained', False) or adv.get('is_chained', False)
             bg      = C["grey"] if row_n % 2 == 0 else C["white"]
 
             vals = [row_n - 4, eid, res.get('name', ''), RT_LABEL.get(rt, rt),
                     ", ".join(rels[eid]["parents"]) or "— origen",
-                    ", ".join(rels[eid]["children"]) or "— fin de flujo",
-                    "Sí" if chained else "No"]
+                    ", ".join(rels[eid]["children"]) or "— fin de flujo"]
             for col_n, val in enumerate(vals, 1):
                 c = ws.cell(row_n, col_n, val)
                 sc(c, bg=bg, size=9, va='center', wrap=False)
@@ -468,13 +461,13 @@ def generar_excel(data, selected_ids):
                                   color=RT_COLOR.get(rt, C["dark"]))
                 c.border = mk_border()
 
-            lnk = ws.cell(row_n, 8, "Ver →")
+            lnk = ws.cell(row_n, 7, "Ver →")
             lnk.hyperlink = f"#'{map_hojas[eid]}'!A1"
             lnk.font = Font(name='Arial', color="0D47A1", underline="single", size=9)
             lnk.border = mk_border()
             ws.row_dimensions[row_n].height = 15
 
-        for col_n, w in enumerate([6,11,44,26,36,36,12,8], 1):
+        for col_n, w in enumerate([6, 11, 46, 26, 38, 38, 8], 1):
             ws.column_dimensions[chr(64+col_n)].width = w
 
         # ── HOJAS DE DETALLE ───────────────────────────────────────────────────
@@ -655,13 +648,31 @@ def generar_excel(data, selected_ids):
                 row = section_title(ws, row,
                     "🔗  CONFIGURACIÓN DE UNIÓN DE FUENTES",
                     bg=C["teal"], cols=COLS)
-                for us in (su.get('union_segments') or []):
-                    label = "TRIGGER" if us.get('is_trigger') else "No trigger"
-                    ttype = us.get('trigger_type') or ''
-                    row = meta_row(ws, row,
-                                   f"Segmento ID {us.get('segment_id', '')}",
-                                   f"{label}  {'· ' + ttype if ttype else ''}",
-                                   cols=COLS, bg_val="E0F2F1")
+                for col_n, h in enumerate(
+                        ["FUENTE", "GRUPO CONCILIABLE", "ROL", "FILTROS DEL GRUPO"], 1):
+                    hdr(ws.cell(row, col_n, h), h, bg=C["teal"])
+                ws.merge_cells(f'D{row}:E{row}')
+                ws.row_dimensions[row].height = 18
+                row += 1
+
+                for i, us in enumerate(su.get('union_segments') or []):
+                    seg_id   = us.get('segment_id')
+                    seg_info = seg_map.get(seg_id) or {}
+                    resource_name = seg_info.get('resource', seg_info.get('resource_name', f"ID:{seg_id}"))
+                    group_name    = seg_info.get('name', f"ID:{seg_id}")
+                    filters_text  = fmt_filter_rules(seg_info.get('rules', []), col_map)
+                    rol = "TRIGGER · " + (us.get('trigger_type') or '') if us.get('is_trigger') else "Fuente adicional"
+                    n_lines = max(filters_text.count('\n') + 1, 1)
+                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    c1 = ws.cell(row, 1, resource_name)
+                    c2 = ws.cell(row, 2, group_name)
+                    c3 = ws.cell(row, 3, rol)
+                    ws.merge_cells(f'D{row}:E{row}')
+                    c4 = ws.cell(row, 4, filters_text)
+                    for c, al in [(c1,'left'),(c2,'left'),(c3,'center'),(c4,'left')]:
+                        sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
+                    ws.row_dimensions[row].height = row_height(n_lines)
+                    row += 1
                 row += 1
 
             # ── GRUPOS CONCILIABLES DEL RECURSO ──────────────────────────────
@@ -733,27 +744,91 @@ def generar_excel(data, selected_ids):
 # ══════════════════════════════════════════════════════════════════════════════
 # STREAMLIT UI
 # ══════════════════════════════════════════════════════════════════════════════
+
+# Custom CSS global
+st.markdown("""
+<style>
+/* Quitar padding top excesivo */
+.block-container { padding-top: 1.5rem !important; }
+
+/* Badges de tipo de recurso */
+.rt-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Filas de recursos */
+.resource-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    margin-bottom: 4px;
+    background: white;
+    transition: background 0.15s;
+}
+.resource-row:hover { background: #fafafa; }
+.resource-name { font-weight: 600; font-size: 0.9rem; color: #1a1a1a; }
+.resource-id { font-size: 0.75rem; color: #888; font-family: monospace; }
+.resource-flow { font-size: 0.78rem; color: #666; }
+
+/* Progress bar generación */
+.stProgress > div > div { background: #EA0050 !important; }
+
+/* Botón primary */
+div[data-testid="stButton"] button[kind="primary"] {
+    background: #EA0050 !important;
+    border: none !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px;
+}
+div[data-testid="stButton"] button[kind="primary"]:hover {
+    background: #C0003A !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style='background:linear-gradient(135deg,#EA0050 0%,#B0003A 100%);
-    padding:28px 36px;border-radius:16px;
-    box-shadow:0 6px 24px rgba(234,0,80,0.25);margin-bottom:4px'>
-    <h1 style='color:white;margin:0;font-family:Arial,sans-serif;
-        font-size:2rem;letter-spacing:-0.5px;font-weight:700'>
-        📊 Simetrik Documentation 
-    </h1>
-    <p style='color:rgba(255,255,255,0.88);margin:8px 0 0;
-        font-size:1rem;font-family:Arial'>
-        PeYa Finance Operations &amp; Payments &nbsp;·&nbsp;
-        Generador de documentación técnica de flujos de conciliación
-    </p>
+    padding:24px 32px 20px;border-radius:14px;
+    box-shadow:0 4px 20px rgba(234,0,80,0.2);margin-bottom:20px'>
+    <div style='display:flex;align-items:center;gap:14px'>
+        <span style='font-size:2.2rem'>📊</span>
+        <div>
+            <h1 style='color:white;margin:0;font-family:Arial,sans-serif;
+                font-size:1.75rem;font-weight:700;letter-spacing:-0.3px'>
+                Simetrik Documentation Pro
+            </h1>
+            <p style='color:rgba(255,255,255,0.82);margin:4px 0 0;font-size:0.9rem;font-family:Arial'>
+                PeYa Finance Operations &amp; Control &nbsp;·&nbsp; v2.2
+            </p>
+        </div>
+    </div>
 </div>""", unsafe_allow_html=True)
 
-st.write("")
-up = st.file_uploader("Sube el JSON exportado desde Simetrik", type=['json'],
-                      help="En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON")
+# ── UPLOAD ────────────────────────────────────────────────────────────────────
+up = st.file_uploader(
+    "**Subí el JSON exportado desde Simetrik**",
+    type=['json'],
+    help="En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON",
+    label_visibility="visible"
+)
 
 if not up:
-    st.info("👆 Sube un JSON para comenzar.")
+    st.markdown("""
+    <div style='background:#F8F9FA;border:2px dashed #dee2e6;border-radius:12px;
+        padding:32px;text-align:center;margin-top:8px'>
+        <div style='font-size:2rem;margin-bottom:8px'>📂</div>
+        <p style='color:#666;font-size:0.95rem;margin:0'>
+            Arrastrá el JSON acá o usá el botón de arriba para seleccionarlo
+        </p>
+        <p style='color:#aaa;font-size:0.8rem;margin:6px 0 0'>
+            En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON
+        </p>
+    </div>""", unsafe_allow_html=True)
     st.stop()
 
 try:
@@ -776,27 +851,44 @@ res_map, col_map, seg_map, meta_map = build_maps(data)
 resources_unique.sort(key=sort_key)
 rels_all = build_relations(resources_unique, nodes, res_map)
 
+# Resumen del flujo cargado
+total_recons = sum(1 for r in resources_unique
+                   if r.get('resource_type') in ('reconciliation','advanced_reconciliation'))
+total_fuentes = sum(1 for r in resources_unique if r.get('resource_type') == 'native')
+
+col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+col_s1.metric("📦 Recursos totales", len(resources_unique))
+col_s2.metric("📥 Fuentes", total_fuentes)
+col_s3.metric("⚖️ Conciliaciones", total_recons)
+col_s4.metric("📄 JSON cargado", up.name[:22] + "…" if len(up.name) > 24 else up.name)
+
+st.markdown("<hr style='margin:16px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
+
 # ── PASO 1: SELECCIÓN ─────────────────────────────────────────────────────────
-st.markdown("---")
-st.markdown("### 1️⃣  Selecciona los recursos a documentar")
+st.markdown("### 1️⃣ &nbsp; Seleccioná los recursos a documentar")
 
-c1, c2 = st.columns([3, 1])
-c1.caption(f"El JSON contiene **{len(resources_unique)}** recursos únicos, ordenados por tipo e ID.")
-
+# Filtro por tipo — pills horizontales
 all_types = sorted({r.get('resource_type', '') for r in resources_unique},
                    key=lambda x: RT_ORDER.get(x, 99))
-filtro_tipo = c2.multiselect(
-    "Filtrar tipo", options=all_types,
-    format_func=lambda x: RT_LABEL.get(x, x),
-    default=all_types, label_visibility="collapsed"
-)
+
+col_f1, col_f2 = st.columns([4, 1])
+with col_f1:
+    filtro_tipo = st.multiselect(
+        "Filtrar por tipo de recurso",
+        options=all_types,
+        format_func=lambda x: RT_LABEL.get(x, x),
+        default=all_types,
+        label_visibility="collapsed",
+        placeholder="Seleccioná tipos de recurso a mostrar…"
+    )
 
 resources_visible = [r for r in resources_unique
                      if r.get('resource_type', '') in filtro_tipo]
 
-bc1, bc2, _ = st.columns([1, 1, 8])
-select_all   = bc1.button("✅ Todos")
-deselect_all = bc2.button("⬜ Ninguno")
+# Botones Todos / Ninguno + contador
+bc1, bc2, bc3 = st.columns([1, 1, 6])
+select_all   = bc1.button("✅ Todos", use_container_width=True)
+deselect_all = bc2.button("☐ Ninguno", use_container_width=True)
 
 if 'sel' not in st.session_state:
     st.session_state.sel = {r.get('export_id'): True for r in resources_unique}
@@ -807,6 +899,8 @@ if deselect_all:
     for r in resources_visible:
         st.session_state.sel[r.get('export_id')] = False
 
+st.write("")
+
 tipo_groups: dict = {}
 for r in resources_visible:
     tipo_groups.setdefault(r.get('resource_type', ''), []).append(r)
@@ -814,57 +908,98 @@ for r in resources_visible:
 selected_ids = set()
 for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
     group = tipo_groups[rt]
-    color = RT_COLOR.get(rt, C["dark"])
+    color  = RT_COLOR.get(rt, C["dark"])
+    label  = RT_LABEL.get(rt, rt)
+
+    # Encabezado de grupo con badge
     st.markdown(
-        f"<div style='background:#{color};color:white;padding:5px 14px;"
-        f"border-radius:8px;font-size:0.85rem;font-weight:700;"
-        f"margin:10px 0 4px'>{RT_LABEL.get(rt, rt)}  ({len(group)})</div>",
+        f"<div style='display:flex;align-items:center;gap:10px;margin:14px 0 6px'>"
+        f"<span style='background:#{color};color:white;padding:4px 14px;"
+        f"border-radius:20px;font-size:0.8rem;font-weight:700;white-space:nowrap'>"
+        f"{label}</span>"
+        f"<span style='color:#aaa;font-size:0.8rem'>{len(group)} recurso{'s' if len(group)!=1 else ''}</span>"
+        f"</div>",
         unsafe_allow_html=True
     )
+
     for r in group:
         eid   = r.get('export_id')
+        name  = r.get('name', '')
         pars  = ", ".join(rels_all[eid]["parents"]) or "—"
         chils = ", ".join(rels_all[eid]["children"]) or "—"
-        ca, cb, cc, cd = st.columns([0.35, 3, 2.5, 2.5])
-        checked = ca.checkbox(
-            "", value=st.session_state.sel.get(eid, True), key=f"chk_{eid}"
-        )
+
+        ca, cb = st.columns([0.3, 9.7])
+        checked = ca.checkbox("", value=st.session_state.sel.get(eid, True), key=f"chk_{eid}")
         st.session_state.sel[eid] = checked
-        cb.markdown(f"**{r.get('name','')}**  `{eid}`")
-        cc.caption(f"⬅️ {pars}")
-        cd.caption(f"➡️ {chils}")
+
+        opacity = "1" if checked else "0.45"
+        cb.markdown(
+            f"<div style='opacity:{opacity};padding:5px 0'>"
+            f"<span style='font-weight:600;font-size:0.9rem;color:#1a1a1a'>{name}</span>"
+            f"&nbsp;&nbsp;<span style='font-size:0.75rem;color:#999;font-family:monospace'>{eid}</span><br>"
+            f"<span style='font-size:0.75rem;color:#777'>⬅️ {pars[:80]}{'…' if len(pars)>80 else ''}"
+            f"&nbsp;&nbsp;➡️ {chils[:80]}{'…' if len(chils)>80 else ''}</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
         if checked:
             selected_ids.add(eid)
 
 # ── PASO 2: GENERAR ───────────────────────────────────────────────────────────
-st.markdown("---")
-n_sel = len(selected_ids)
-st.markdown(f"### 2️⃣  Generar Documentación Excel  ·  **{n_sel}** recurso{'s' if n_sel != 1 else ''} seleccionado{'s' if n_sel != 1 else ''}")
+st.markdown("<hr style='margin:20px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
 
-if not selected_ids:
-    st.warning("Selecciona al menos un recurso para continuar.")
+n_sel = len(selected_ids)
+
+# Panel de resumen de selección
+if n_sel > 0:
+    tipos_sel = {}
+    for r in resources_unique:
+        if r.get('export_id') in selected_ids:
+            rt = r.get('resource_type','')
+            tipos_sel[rt] = tipos_sel.get(rt, 0) + 1
+    resumen_badges = " &nbsp; ".join(
+        f"<span style='background:#{RT_COLOR.get(rt,\"444\")};color:white;"
+        f"padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:700'>"
+        f"{RT_LABEL.get(rt,rt)} ({cnt})</span>"
+        for rt, cnt in sorted(tipos_sel.items(), key=lambda x: RT_ORDER.get(x[0],99))
+    )
+    st.markdown(
+        f"<div style='background:#F8F9FA;border-radius:10px;padding:12px 16px;"
+        f"margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap'>"
+        f"<span style='font-weight:700;color:#333'>📋 {n_sel} seleccionado{'s' if n_sel!=1 else ''}:</span>"
+        f"{resumen_badges}</div>",
+        unsafe_allow_html=True
+    )
+else:
+    st.warning("Seleccioná al menos un recurso para continuar.")
     st.stop()
 
 nombre_dl = f"{os.path.splitext(up.name)[0]}_DOC_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
 
-if st.button("🚀  GENERAR DOCUMENTACION EXCEL", type="primary", use_container_width=True):
-    with st.spinner("Procesando… resolviendo grupos conciliables y segmentos"):
-        try:
-            excel_bytes = generar_excel(data, selected_ids)
-            st.success(f"✅ ¡Listo! {n_sel} recursos documentados.")
-            st.balloons()
-            st.download_button(
-                label="📥  Descargar Documentación Excel",
-                data=excel_bytes,
-                file_name=nombre_dl,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-                type="primary"
-            )
-        except Exception as e:
-            st.error(f"Error: {e}")
-            import traceback
-            st.code(traceback.format_exc())
+if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
+    prog = st.progress(0, text="Iniciando…")
+    try:
+        prog.progress(15, text="Procesando recursos y columnas…")
+        prog.progress(40, text="Resolviendo grupos conciliables…")
+        prog.progress(65, text="Construyendo reglas de conciliación…")
+        excel_bytes = generar_excel(data, selected_ids)
+        prog.progress(90, text="Aplicando estilos…")
+        prog.progress(100, text="¡Listo!")
+        st.success(f"✅ Excel generado con **{n_sel}** recursos documentados.")
+        st.balloons()
+        st.download_button(
+            label="📥  Descargar Excel",
+            data=excel_bytes,
+            file_name=nombre_dl,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            type="primary"
+        )
+    except Exception as e:
+        prog.empty()
+        st.error(f"Error al generar el Excel: {e}")
+        import traceback
+        st.code(traceback.format_exc())
 
-st.markdown("---")
-st.caption("Simetrik Documentation · PeYa Finance · v2.1  Jef ES")
+st.markdown("<hr style='margin:24px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
+st.caption("Simetrik Documentation Pro · PeYa Finance Operations & Control · v2.2")
