@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 
-st.set_page_config(page_title="Simetrik Docs | PeYa", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Simetrik Docs Pro | PeYa", page_icon="📊", layout="wide")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CONSTANTES
@@ -860,7 +860,15 @@ col_s1, col_s2, col_s3, col_s4 = st.columns(4)
 col_s1.metric("📦 Recursos totales", len(resources_unique))
 col_s2.metric("📥 Fuentes", total_fuentes)
 col_s3.metric("⚖️ Conciliaciones", total_recons)
-col_s4.metric("📄 JSON cargado", up.name[:22] + "…" if len(up.name) > 24 else up.name)
+# Nombre del JSON sin truncar con metric — usar markdown para control total
+with col_s4:
+    nombre_display = up.name if len(up.name) <= 28 else up.name[:25] + "…"
+    st.markdown(
+        "<div style='font-size:0.75rem;color:#888;margin-bottom:4px'>📄 JSON cargado</div>"
+        "<div style='font-size:0.95rem;font-weight:600;color:#1a1a1a;word-break:break-all'>"
+        + nombre_display + "</div>",
+        unsafe_allow_html=True
+    )
 
 st.markdown("<hr style='margin:16px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
 
@@ -873,6 +881,7 @@ all_types = sorted({r.get('resource_type', '') for r in resources_unique},
 
 col_f1, col_f2 = st.columns([4, 1])
 with col_f1:
+    # Mostrar los tipos con su label completo en el multiselect
     filtro_tipo = st.multiselect(
         "Filtrar por tipo de recurso",
         options=all_types,
@@ -950,26 +959,37 @@ st.markdown("<hr style='margin:20px 0;border-color:#f0f0f0'>", unsafe_allow_html
 
 n_sel = len(selected_ids)
 
-# Panel de resumen de selección
+# Panel de resumen de selección — construido con concatenación para evitar
+# conflictos de comillas en f-strings anidados
 if n_sel > 0:
     tipos_sel = {}
     for r in resources_unique:
         if r.get('export_id') in selected_ids:
-            rt = r.get('resource_type','')
+            rt = r.get('resource_type', '')
             tipos_sel[rt] = tipos_sel.get(rt, 0) + 1
-    resumen_badges = " &nbsp; ".join(
-        f"<span style='background:#{RT_COLOR.get(rt, '444')};""color:white;'>"
-        f"padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:700'>"
-        f"{RT_LABEL.get(rt,rt)} ({cnt})</span>"
-        for rt, cnt in sorted(tipos_sel.items(), key=lambda x: RT_ORDER.get(x[0],99))
+
+    badges_html = ""
+    for rt, cnt in sorted(tipos_sel.items(), key=lambda x: RT_ORDER.get(x[0], 99)):
+        color = RT_COLOR.get(rt, "444444")
+        label = RT_LABEL.get(rt, rt)
+        badges_html += (
+            "<span style='background:#" + color + ";color:white;"
+            "padding:3px 12px;border-radius:12px;font-size:0.78rem;"
+            "font-weight:700;white-space:nowrap'>"
+            + label + " (" + str(cnt) + ")"
+            "</span> "
+        )
+
+    sel_label = "seleccionados" if n_sel != 1 else "seleccionado"
+    resumen_html = (
+        "<div style='background:#F8F9FA;border-radius:10px;padding:12px 16px;"
+        "margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap'>"
+        "<span style='font-weight:700;color:#333;white-space:nowrap'>📋 "
+        + str(n_sel) + " " + sel_label + ":</span>"
+        + badges_html
+        + "</div>"
     )
-    st.markdown(
-        f"<div style='background:#F8F9FA;border-radius:10px;padding:12px 16px;"
-        f"margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap'>"
-        f"<span style='font-weight:700;color:#333'>📋 {n_sel} seleccionado{'s' if n_sel!=1 else ''}:</span>"
-        f"{resumen_badges}</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown(resumen_html, unsafe_allow_html=True)
 else:
     st.warning("Seleccioná al menos un recurso para continuar.")
     st.stop()
