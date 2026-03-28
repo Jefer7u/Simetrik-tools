@@ -166,6 +166,43 @@ def fmt_filter_rules(rules, col_map):
 
 def parse_transformation_logic(col, res_map, col_map):
     lines = []
+
+    # ── Columnas de duplicados (generated_type = uniqueness) ──────────────────
+    uniq = col.get('uniqueness')
+    if uniq:
+        dtype      = col.get('data_format', '')
+        uniq_type  = uniq.get('type')                    # 1 = primer registro, 2 = último
+        order_keys = uniq.get('order_keys', [])
+        part_keys  = uniq.get('partition_keys', [])
+
+        # Tipo de columna de duplicado
+        if dtype == 'boolean':
+            lines.append("TIPO: Booleano de duplicado (true = es duplicado, false = es el registro principal)")
+        elif dtype == 'integer':
+            lines.append("TIPO: Numeración de duplicado (número de fila del registro dentro del grupo)")
+
+        # Registro que se conserva
+        keep = "último registro del grupo" if uniq_type == 2 else "primer registro del grupo"
+        lines.append("CONSERVA: " + keep)
+
+        # ORDER BY (columna y dirección)
+        if order_keys:
+            order_parts = []
+            for ok in sorted(order_keys, key=lambda x: x.get('position', 0)):
+                col_name  = col_map.get(ok.get('column_id'), f"ID:{ok.get('column_id')}")
+                direction = "ASC" if ok.get('order_by', 1) == 1 else "DESC"
+                order_parts.append(f"{col_name} {direction}")
+            lines.append("ORDER BY: " + ", ".join(order_parts))
+
+        # PARTITION BY (clave que define el duplicado)
+        if part_keys:
+            part_names = [col_map.get(pk.get('column_id'), f"ID:{pk.get('column_id')}")
+                          for pk in part_keys]
+            lines.append("PARTITION BY (clave de duplicado):\n  " + "\n  ".join(part_names))
+
+        return "\n".join(lines)
+
+    # ── BUSCAR V ──────────────────────────────────────────────────────────────
     v = col.get('v_lookup')
     if v:
         vs = v.get('v_lookup_set') or {}
@@ -180,11 +217,14 @@ def parse_transformation_logic(col, res_map, col_map):
         lines.append("BUSCAR V EN: " + origin)
         if keys:
             lines.append("CLAVE MATCH: " + keys)
+
+    # ── Transformaciones / fórmulas ───────────────────────────────────────────
     parents = [t for t in (col.get('transformations') or []) if t.get('is_parent')]
     for t in parents:
         q = (t.get('query') or '').strip()
         if q and q.upper() != 'N/A':
             lines.append("FÓRMULA: " + q)
+
     return "\n".join(lines) if lines else "Dato directo / heredado"
 
 
@@ -390,7 +430,7 @@ def generar_excel(data, selected_ids):
         ws.sheet_view.showGridLines = False
 
         ws.merge_cells('A1:H1')
-        c = ws.cell(1, 1, "SIMETRIK DOCUMENTATION PRO  ·  PeYa Finance Operations Payments")
+        c = ws.cell(1, 1, "SIMETRIK DOCUMENTATION PRO  ·  PeYa Finance Operations & Control")
         sc(c, bg=C["red"], bold=True, color=C["white"], size=13,
            ha='center', va='center', wrap=False)
         ws.row_dimensions[1].height = 32
@@ -807,7 +847,7 @@ if not selected_ids:
 
 nombre_dl = f"{os.path.splitext(up.name)[0]}_DOC_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
 
-if st.button("🚀  GENERAR DOCUMENTACIÓN", type="primary", use_container_width=True):
+if st.button("🚀  GENERAR EXCEL PROFESIONAL", type="primary", use_container_width=True):
     with st.spinner("Procesando… resolviendo grupos conciliables y segmentos"):
         try:
             excel_bytes = generar_excel(data, selected_ids)
