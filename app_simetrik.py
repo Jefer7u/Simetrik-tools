@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 
-st.set_page_config(page_title="Simetrik Docs Pro | PeYa", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Simetrik Docs | PeYa", page_icon="📊", layout="wide")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CONSTANTES
@@ -739,21 +739,21 @@ st.markdown("""
     box-shadow:0 6px 24px rgba(234,0,80,0.25);margin-bottom:4px'>
     <h1 style='color:white;margin:0;font-family:Arial,sans-serif;
         font-size:2rem;letter-spacing:-0.5px;font-weight:700'>
-        📊 Simetrik Documentation Pro
+        📊 Simetrik Documentation 
     </h1>
     <p style='color:rgba(255,255,255,0.88);margin:8px 0 0;
         font-size:1rem;font-family:Arial'>
-        PeYa Finance Operations &amp; Control &nbsp;·&nbsp;
+        PeYa Finance Operations &amp; Payments &nbsp;·&nbsp;
         Generador de documentación técnica de flujos de conciliación
     </p>
 </div>""", unsafe_allow_html=True)
 
 st.write("")
-up = st.file_uploader("Subí el JSON exportado desde Simetrik", type=['json'],
+up = st.file_uploader("Sube el JSON exportado desde Simetrik", type=['json'],
                       help="En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON")
 
 if not up:
-    st.info("👆 Subí un JSON para comenzar.")
+    st.info("👆 Sube un JSON para comenzar.")
     st.stop()
 
 try:
@@ -778,7 +778,7 @@ rels_all = build_relations(resources_unique, nodes, res_map)
 
 # ── PASO 1: SELECCIÓN ─────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("### 1️⃣  Seleccioná los recursos a documentar")
+st.markdown("### 1️⃣  Selecciona los recursos a documentar")
 
 c1, c2 = st.columns([3, 1])
 c1.caption(f"El JSON contiene **{len(resources_unique)}** recursos únicos, ordenados por tipo e ID.")
@@ -839,22 +839,22 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
 # ── PASO 2: GENERAR ───────────────────────────────────────────────────────────
 st.markdown("---")
 n_sel = len(selected_ids)
-st.markdown(f"### 2️⃣  Generar Excel  ·  **{n_sel}** recurso{'s' if n_sel != 1 else ''} seleccionado{'s' if n_sel != 1 else ''}")
+st.markdown(f"### 2️⃣  Generar Documentación Excel  ·  **{n_sel}** recurso{'s' if n_sel != 1 else ''} seleccionado{'s' if n_sel != 1 else ''}")
 
 if not selected_ids:
-    st.warning("Seleccioná al menos un recurso para continuar.")
+    st.warning("Selecciona al menos un recurso para continuar.")
     st.stop()
 
 nombre_dl = f"{os.path.splitext(up.name)[0]}_DOC_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
 
-if st.button("🚀  GENERAR EXCEL PROFESIONAL", type="primary", use_container_width=True):
+if st.button("🚀  GENERAR DOCUMENTACION EXCEL", type="primary", use_container_width=True):
     with st.spinner("Procesando… resolviendo grupos conciliables y segmentos"):
         try:
             excel_bytes = generar_excel(data, selected_ids)
             st.success(f"✅ ¡Listo! {n_sel} recursos documentados.")
             st.balloons()
             st.download_button(
-                label="📥  Descargar Excel",
+                label="📥  Descargar Documentación Excel",
                 data=excel_bytes,
                 file_name=nombre_dl,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -867,4 +867,4 @@ if st.button("🚀  GENERAR EXCEL PROFESIONAL", type="primary", use_container_wi
             st.code(traceback.format_exc())
 
 st.markdown("---")
-st.caption("Simetrik Documentation Pro · PeYa Finance · v2.1 ES")
+st.caption("Simetrik Documentation · PeYa Finance · v2.1  Jef ES")
