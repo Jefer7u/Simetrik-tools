@@ -59,7 +59,7 @@ def sc(cell, bg=None, bold=False, color=C["dark"], size=10,
        ha='left', va='top', wrap=True):
     cell.border = mk_border()
     cell.alignment = Alignment(horizontal=ha, vertical=va, wrap_text=wrap)
-    cell.font = Font(name='Arial', bold=bold, size=size, color=color)
+    cell.font = Font(name='Calibri', bold=bold, size=size, color=color)
     if bg:
         cell.fill = PatternFill(start_color=bg, end_color=bg, fill_type="solid")
 
@@ -489,13 +489,13 @@ def generar_excel(data, selected_ids):
                 c = ws.cell(row_n, col_n, val)
                 sc(c, bg=bg, size=9, va='center', wrap=False)
                 if col_n == 4:
-                    c.font = Font(name='Arial', bold=True, size=9,
+                    c.font = Font(name='Calibri', bold=True, size=9,
                                   color=RT_COLOR.get(rt, C["dark"]))
                 c.border = mk_border()
 
             lnk = ws.cell(row_n, 7, "Ver →")
             lnk.hyperlink = f"#'{map_hojas[eid]}'!A1"
-            lnk.font = Font(name='Arial', color="0D47A1", underline="single", size=9)
+            lnk.font = Font(name='Calibri', color="0D47A1", underline="single", size=9)
             lnk.border = mk_border()
             ws.row_dimensions[row_n].height = 15
 
@@ -788,33 +788,23 @@ def generar_excel(data, selected_ids):
 # STREAMLIT UI
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Custom CSS global
+# Custom CSS global — Roboto desde Google Fonts
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+/* Fuente global Roboto */
+html, body, [class*="css"], .stMarkdown, .stCaption,
+.stMetric, .stButton, .stDownloadButton,
+div[data-testid], p, span, label, h1, h2, h3, h4 {
+    font-family: 'Roboto', sans-serif !important;
+}
+
+/* Monospace para IDs */
+code, .font-mono { font-family: 'Roboto Mono', monospace !important; }
+
 /* Quitar padding top excesivo */
 .block-container { padding-top: 1.5rem !important; }
-
-/* Badges de tipo de recurso */
-.rt-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 10px; border-radius: 20px;
-    font-size: 0.75rem; font-weight: 700;
-    white-space: nowrap;
-}
-
-/* Filas de recursos */
-.resource-row {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 10px; border-radius: 8px;
-    border: 1px solid #e8e8e8;
-    margin-bottom: 4px;
-    background: white;
-    transition: background 0.15s;
-}
-.resource-row:hover { background: #fafafa; }
-.resource-name { font-weight: 600; font-size: 0.9rem; color: #1a1a1a; }
-.resource-id { font-size: 0.75rem; color: #888; font-family: monospace; }
-.resource-flow { font-size: 0.78rem; color: #666; }
 
 /* Progress bar generación */
 .stProgress > div > div { background: #EA0050 !important; }
@@ -824,11 +814,15 @@ div[data-testid="stButton"] button[kind="primary"] {
     background: #EA0050 !important;
     border: none !important;
     font-size: 1rem !important;
-    font-weight: 700 !important;
+    font-weight: 500 !important;
     letter-spacing: 0.3px;
+    font-family: 'Roboto', sans-serif !important;
 }
 div[data-testid="stButton"] button[kind="primary"]:hover {
     background: #C0003A !important;
+}
+div[data-testid="stDownloadButton"] button {
+    font-family: 'Roboto', sans-serif !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1065,4 +1059,4 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         st.code(traceback.format_exc())
 
 st.markdown("<hr style='margin:24px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
-st.caption("Simetrik Documentation  · PeYa Finance Operations & Payments · v2.2 · Jef · Jef")
+st.caption("Simetrik Documentation · PeYa Finance Operations & Payments · v2.2 · Jef")
