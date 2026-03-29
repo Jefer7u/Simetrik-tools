@@ -94,11 +94,12 @@ def row_height(n_lines, base=13):
 # PARSERS
 # ══════════════════════════════════════════════════════════════════════════════
 def build_maps(data):
-    """Construye mapas globales: res_map, col_map, seg_map, meta_map."""
-    res_map = {}   # export_id → nombre del recurso
-    col_map = {}   # export_id → label de columna
-    seg_map = {}   # export_id → {name, resource, resource_id, rules}
-    meta_map = {}  # export_id → valor del segmento (avanzadas)
+    """Construye mapas globales: res_map, col_map, seg_map, meta_map, seg_usage."""
+    res_map   = {}   # export_id → nombre del recurso
+    col_map   = {}   # export_id → label de columna
+    seg_map   = {}   # export_id → {name, resource, resource_id, rules}
+    meta_map  = {}   # export_id → valor del segmento (avanzadas)
+    seg_usage = {}   # seg export_id → [(resource_name, tipo_uso)]
 
     for r in data.get('resources', []):
         eid  = r.get('export_id')
@@ -128,7 +129,6 @@ def build_maps(data):
                 if cid and cid not in col_map:
                     col_map[cid] = f"col_{cid}"
             sc2 = rg.get('segmentation_config') or {}
-            # segmentation_metadata_id → valor legible
             for m in sc2.get('segmentation_metadata', []):
                 meta_map[m.get('export_id')] = m.get('value', '?')
             ccid = sc2.get('criteria_column_id')
@@ -149,7 +149,35 @@ def build_maps(data):
                 'rules':       rules,
             }
 
-    return res_map, col_map, seg_map, meta_map
+    # ── Mapa de uso: qué recursos usan cada grupo conciliable ────────────────
+    for r in data.get('resources', []):
+        rname = r.get('name', '')
+
+        recon = r.get('reconciliation') or {}
+        sa = recon.get('segment_a_id')
+        sb = recon.get('segment_b_id')
+        pa = recon.get('segment_a_prefix', 'A')
+        pb = recon.get('segment_b_prefix', 'B')
+        if sa:
+            seg_usage.setdefault(sa, []).append((rname, f"Conciliacion lado {pa}"))
+        if sb:
+            seg_usage.setdefault(sb, []).append((rname, f"Conciliacion lado {pb}"))
+
+        adv = r.get('advanced_reconciliation') or {}
+        for rg in adv.get('reconcilable_groups', []):
+            sgid = rg.get('segment_id')
+            if sgid:
+                seg_usage.setdefault(sgid, []).append(
+                    (rname, f"Conciliacion Avanzada lado {rg.get('prefix_side','?')}")
+                )
+
+        su = r.get('source_union') or {}
+        for us in su.get('union_segments', []):
+            sgid = us.get('segment_id')
+            if sgid:
+                seg_usage.setdefault(sgid, []).append((rname, "Union de Fuentes"))
+
+    return res_map, col_map, seg_map, meta_map, seg_usage
 
 
 def fmt_filter_rules(rules, col_map):
@@ -161,7 +189,7 @@ def fmt_filter_rules(rules, col_map):
         op   = r.get('operator', '')
         val  = r.get('value', '')
         lines.append(f"{cond} [{col_name}] {op} {val}".strip())
-    return "\n".join(lines) if lines else "Sin filtros adicionales"
+    return "\n".join(lines) if lines else "Sin filtros configurados"
 
 
 def parse_transformation_logic(col, res_map, col_map):
@@ -171,15 +199,15 @@ def parse_transformation_logic(col, res_map, col_map):
     uniq = col.get('uniqueness')
     if uniq:
         dtype      = col.get('data_format', '')
-        uniq_type  = uniq.get('type')                    # 1 = primer registro, 2 = último
+        uniq_type  = uniq.get('type')
         order_keys = uniq.get('order_keys', [])
         part_keys  = uniq.get('partition_keys', [])
 
         # Tipo de columna de duplicado
         if dtype == 'boolean':
-            lines.append("TIPO: Booleano de duplicado (true = es duplicado, false = es el registro principal)")
+            lines.append("TIPO: Booleano de duplicado")
         elif dtype == 'integer':
-            lines.append("TIPO: Numeración de duplicado (número de fila del registro dentro del grupo)")
+            lines.append("TIPO: Numeracion de duplicado")
 
         # Registro que se conserva
         # ORDER BY (columna y dirección)
@@ -222,7 +250,7 @@ def parse_transformation_logic(col, res_map, col_map):
         if q and q.upper() != 'N/A':
             lines.append("FÓRMULA: " + q)
 
-    return "\n".join(lines) if lines else "Dato directo / heredado"
+    return "\n".join(lines) if lines else "Campo directo / heredado"
 
 
 def parse_std_reconciliation(recon, res_map, col_map, seg_map):
@@ -354,7 +382,11 @@ def parse_segment_filters(segs, col_map):
                     f"{r.get('condition','')} [{col_name}] {r.get('operator','')} {r.get('value','')}".strip()
                 )
         if rules:
-            result.append({'name': seg.get('name', ''), 'rules': rules})
+            result.append({
+                'seg_id': seg.get('export_id'),
+                'name':   seg.get('name', ''),
+                'rules':  rules,
+            })
     return result
 
 
@@ -403,7 +435,7 @@ def build_relations(resources, nodes, res_map):
 def generar_excel(data, selected_ids):
     all_resources             = data.get('resources', [])
     nodes                     = data.get('nodes', [])
-    res_map, col_map, seg_map, meta_map = build_maps(data)
+    res_map, col_map, seg_map, meta_map, seg_usage = build_maps(data)
 
     # Deduplicar + filtrar + ordenar (tipo → ID)
     seen, resources = set(), []
@@ -682,19 +714,30 @@ def generar_excel(data, selected_ids):
                     "🔍  GRUPOS CONCILIABLES DEL RECURSO",
                     bg=C["slate"], cols=COLS)
                 for col_n, h in enumerate(
-                        ["NOMBRE DEL GRUPO", "FILTROS APLICADOS"], 1):
+                        ["NOMBRE DEL GRUPO", "FILTROS APLICADOS", "USADO EN"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg=C["slate"])
-                ws.merge_cells(f'B{row}:E{row}')
+                ws.merge_cells(f'B{row}:D{row}')
                 ws.row_dimensions[row].height = 18
                 row += 1
                 for i, seg in enumerate(segs_all):
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    # Resolve usage
+                    usages = seg_usage.get(seg['seg_id'], [])
+                    if usages:
+                        usage_lines = [u[0] + " (" + u[1] + ")" for u in usages]
+                        usage_text = "\n".join(usage_lines)
+                    else:
+                        usage_text = "Sin uso en flujo activo"
+                    n_lines = max(len(seg['rules']), len(usages) if usages else 1)
                     c1 = ws.cell(row, 1, seg['name'])
-                    ws.merge_cells(f'B{row}:E{row}')
+                    ws.merge_cells(f'B{row}:D{row}')
                     c2 = ws.cell(row, 2, "\n".join(seg['rules']))
-                    for c in [c1, c2]:
-                        sc(c, bg=bg, size=9, va='top', wrap=True)
-                    ws.row_dimensions[row].height = row_height(len(seg['rules']))
+                    c3 = ws.cell(row, 5, usage_text)
+                    sc(c1, bg=bg, size=9, va='top', wrap=True)
+                    sc(c2, bg=bg, size=9, va='top', wrap=True)
+                    sc(c3, bg=bg, size=9, va='top', wrap=True,
+                       color="1B5E20" if usages else "888888")
+                    ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
                 row += 1
 
@@ -728,11 +771,11 @@ def generar_excel(data, selected_ids):
                     ws.row_dimensions[row].height = row_height(logic.count('\n') + 1)
                     row += 1
 
-            ws.column_dimensions['A'].width = 22
-            ws.column_dimensions['B'].width = 30
-            ws.column_dimensions['C'].width = 28
-            ws.column_dimensions['D'].width = 40
-            ws.column_dimensions['E'].width = 22
+            ws.column_dimensions['A'].width = 26
+            ws.column_dimensions['B'].width = 22
+            ws.column_dimensions['C'].width = 22
+            ws.column_dimensions['D'].width = 22
+            ws.column_dimensions['E'].width = 32
 
         if "Sheet" in wb.sheetnames:
             wb.remove(wb["Sheet"])
@@ -803,7 +846,7 @@ st.markdown("""
                 Simetrik Documentation Pro
             </h1>
             <p style='color:rgba(255,255,255,0.82);margin:4px 0 0;font-size:0.9rem;font-family:Arial'>
-                PeYa Finance Operations &amp; Control &nbsp;·&nbsp; v2.2
+                PeYa Finance Operations &amp; Control &nbsp;·&nbsp; v2.2 · Jef
             </p>
         </div>
     </div>
@@ -811,7 +854,7 @@ st.markdown("""
 
 # ── UPLOAD ────────────────────────────────────────────────────────────────────
 up = st.file_uploader(
-    "**Subí el JSON exportado desde Simetrik**",
+    "**Carga el JSON exportado desde Simetrik**",
     type=['json'],
     help="En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON",
     label_visibility="visible"
@@ -823,7 +866,7 @@ if not up:
         padding:32px;text-align:center;margin-top:8px'>
         <div style='font-size:2rem;margin-bottom:8px'>📂</div>
         <p style='color:#666;font-size:0.95rem;margin:0'>
-            Arrastrá el JSON acá o usá el botón de arriba para seleccionarlo
+            Arrastra el JSON aquí o usá el botón de arriba para seleccionarlo
         </p>
         <p style='color:#aaa;font-size:0.8rem;margin:6px 0 0'>
             En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON
@@ -847,7 +890,7 @@ for r in all_resources:
         seen_load.add(eid)
         resources_unique.append(r)
 
-res_map, col_map, seg_map, meta_map = build_maps(data)
+res_map, col_map, seg_map, meta_map, seg_usage = build_maps(data)
 resources_unique.sort(key=sort_key)
 rels_all = build_relations(resources_unique, nodes, res_map)
 
@@ -873,7 +916,7 @@ with col_s4:
 st.markdown("<hr style='margin:16px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
 
 # ── PASO 1: SELECCIÓN ─────────────────────────────────────────────────────────
-st.markdown("### 1️⃣ &nbsp; Seleccioná los recursos a documentar")
+st.markdown("### 1️⃣ &nbsp; Selecciona los recursos a documentar")
 
 # Filtro por tipo — pills horizontales
 all_types = sorted({r.get('resource_type', '') for r in resources_unique},
@@ -888,7 +931,7 @@ with col_f1:
         format_func=lambda x: RT_LABEL.get(x, x),
         default=all_types,
         label_visibility="collapsed",
-        placeholder="Seleccioná tipos de recurso a mostrar…"
+        placeholder="Selecciona tipos de recurso a mostrar…"
     )
 
 resources_visible = [r for r in resources_unique
@@ -926,7 +969,7 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
         f"<span style='background:#{color};color:white;padding:4px 14px;"
         f"border-radius:20px;font-size:0.8rem;font-weight:700;white-space:nowrap'>"
         f"{label}</span>"
-        f"<span style='color:#aaa;font-size:0.8rem'>{len(group)} recurso{'s' if len(group)!=1 else ''}</span>"
+        f"<span style='color:#aaa;font-size:0.8rem'>{len(group)} recursos</span>"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -991,21 +1034,21 @@ if n_sel > 0:
     )
     st.markdown(resumen_html, unsafe_allow_html=True)
 else:
-    st.warning("Seleccioná al menos un recurso para continuar.")
+    st.warning("Selecciona al menos un recurso para continuar.")
     st.stop()
 
 nombre_dl = f"{os.path.splitext(up.name)[0]}_DOC_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
 
 if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
-    prog = st.progress(0, text="Iniciando…")
+    prog = st.progress(0, text="Iniciando...")
     try:
-        prog.progress(15, text="Procesando recursos y columnas…")
-        prog.progress(40, text="Resolviendo grupos conciliables…")
-        prog.progress(65, text="Construyendo reglas de conciliación…")
+        prog.progress(15, text="Procesando recursos...")
+        prog.progress(40, text="Resolviendo grupos conciliables...")
+        prog.progress(65, text="Construyendo reglas de conciliacion...")
         excel_bytes = generar_excel(data, selected_ids)
-        prog.progress(90, text="Aplicando estilos…")
-        prog.progress(100, text="¡Listo!")
-        st.success(f"✅ Excel generado con **{n_sel}** recursos documentados.")
+        prog.progress(90, text="Aplicando estilos...")
+        prog.progress(100, text="Listo.")
+        st.success(f"✅ Excel generado con **" + str(n_sel) + "** recursos documentados.")
         st.balloons()
         st.download_button(
             label="📥  Descargar Excel",
@@ -1022,4 +1065,4 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         st.code(traceback.format_exc())
 
 st.markdown("<hr style='margin:24px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
-st.caption("Simetrik Documentation Pro · PeYa Finance Operations & Control · v2.2")
+st.caption("Simetrik Documentation Pro · PeYa Finance Operations & Control · v2.2 · Jef · Jef")
