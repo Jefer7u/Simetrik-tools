@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 
-st.set_page_config(page_title="Simetrik Docs Pro | PeYa", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", layout="wide")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CONSTANTES
@@ -459,7 +459,7 @@ def generar_excel(data, selected_ids):
         ws.sheet_view.showGridLines = False
 
         ws.merge_cells('A1:H1')
-        c = ws.cell(1, 1, "SIMETRIK DOCUMENTATION PRO  ·  PeYa Finance Operations & Control")
+        c = ws.cell(1, 1, "SIMETRIK DOCUMENTATION  ·  PeYa Finance Operations & Payments")
         sc(c, bg=C["red"], bold=True, color=C["white"], size=13,
            ha='center', va='center', wrap=False)
         ws.row_dimensions[1].height = 32
@@ -472,7 +472,7 @@ def generar_excel(data, selected_ids):
         ws.row_dimensions[2].height = 15
 
         idx_hdrs = ["#", "ID", "NOMBRE DEL RECURSO", "TIPO",
-                    "PROVIENE DE", "ALIMENTA A", "LINK"]
+                    "PROVIENE DE", "ALIMENTA A", "LINK 🔗"]
         for i, h in enumerate(idx_hdrs, 1):
             hdr(ws.cell(4, i, h), h, bg=C["dark"])
         ws.row_dimensions[4].height = 20
@@ -843,10 +843,10 @@ st.markdown("""
         <div>
             <h1 style='color:white;margin:0;font-family:Arial,sans-serif;
                 font-size:1.75rem;font-weight:700;letter-spacing:-0.3px'>
-                Simetrik Documentation Pro
+                Simetrik Documentation 
             </h1>
             <p style='color:rgba(255,255,255,0.82);margin:4px 0 0;font-size:0.9rem;font-family:Arial'>
-                PeYa Finance Operations &amp; Control &nbsp;·&nbsp; v2.2 · Jef
+                PeYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
             </p>
         </div>
     </div>
@@ -1065,4 +1065,4 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         st.code(traceback.format_exc())
 
 st.markdown("<hr style='margin:24px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
-st.caption("Simetrik Documentation Pro · PeYa Finance Operations & Control · v2.2 · Jef · Jef")
+st.caption("Simetrik Documentation  · PeYa Finance Operations & Payments · v2.2 · Jef · Jef")
