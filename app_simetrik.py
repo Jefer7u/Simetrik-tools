@@ -713,10 +713,10 @@ def generar_excel(data, selected_ids):
                 row = section_title(ws, row,
                     "🔍  GRUPOS CONCILIABLES DEL RECURSO",
                     bg=C["slate"], cols=COLS)
-                for col_n, h in enumerate(
-                        ["NOMBRE DEL GRUPO", "FILTROS APLICADOS", "USADO EN"], 1):
+                for col_n, h in enumerate(["NOMBRE DEL GRUPO", "FILTROS APLICADOS"], 1):
                     hdr(ws.cell(row, col_n, h), h, bg=C["slate"])
                 ws.merge_cells(f'B{row}:D{row}')
+                hdr(ws.cell(row, 5, "USADO EN"), "USADO EN", bg=C["slate"])
                 ws.row_dimensions[row].height = 18
                 row += 1
                 for i, seg in enumerate(segs_all):
