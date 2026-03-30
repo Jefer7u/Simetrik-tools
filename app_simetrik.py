@@ -829,20 +829,33 @@ div[data-testid="stDownloadButton"] button {
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='background:linear-gradient(135deg,#EA0050 0%,#B0003A 100%);
-    padding:24px 32px 20px;border-radius:14px;
+<div style='background:linear-gradient(135deg,#EA0050 0%,#C0003A 100%);
+    padding:20px 32px;border-radius:14px;
     box-shadow:0 4px 20px rgba(234,0,80,0.2);margin-bottom:20px'>
-    <div style='display:flex;align-items:center;gap:14px'>
-        <span style='font-size:2.2rem'>📊</span>
-        <div>
-            <h1 style='color:white;margin:0;font-family:Arial,sans-serif;
-                font-size:1.75rem;font-weight:700;letter-spacing:-0.3px'>
-                Simetrik Documentation 
-            </h1>
-            <p style='color:rgba(255,255,255,0.82);margin:4px 0 0;font-size:0.9rem;font-family:Arial'>
-                PeYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
-            </p>
+    <div style='display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px'>
+        <div style='display:flex;align-items:center;gap:20px'>
+            <svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 200 200'>
+                <path d='M60 20 L130 20 Q170 20 170 65 Q170 110 130 110 L100 110 L100 180 L60 180 Z
+                         M100 50 L100 80 L128 80 Q138 80 138 65 Q138 50 128 50 Z'
+                      fill='white'/>
+            </svg>
+            <div>
+                <div style='color:white;font-family:Roboto,Arial,sans-serif;
+                    font-size:1.5rem;font-weight:700;letter-spacing:-0.3px;line-height:1.2'>
+                    Simetrik Documentation
+                </div>
+                <div style='color:rgba(255,255,255,0.8);font-family:Roboto,Arial,sans-serif;
+                    font-size:0.85rem;margin-top:3px'>
+                    PedidosYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
+                </div>
+            </div>
         </div>
+        <svg xmlns='http://www.w3.org/2000/svg' height='28' viewBox='0 0 520 90' fill='white'>
+            <path d='M10 5 L68 5 Q98 5 98 38 Q98 70 68 70 L46 70 L46 85 L10 85 Z
+                     M46 28 L46 47 L66 47 Q74 47 74 38 Q74 28 66 28 Z'/>
+            <text x='112' y='68' font-family='Arial Black,Arial' font-weight='900'
+                  font-size='72' fill='white' letter-spacing='-1'>PedidosYa</text>
+        </svg>
     </div>
 </div>""", unsafe_allow_html=True)
 
@@ -888,24 +901,48 @@ res_map, col_map, seg_map, meta_map, seg_usage = build_maps(data)
 resources_unique.sort(key=sort_key)
 rels_all = build_relations(resources_unique, nodes, res_map)
 
-# Resumen del flujo cargado
-total_recons = sum(1 for r in resources_unique
-                   if r.get('resource_type') in ('reconciliation','advanced_reconciliation'))
-total_fuentes = sum(1 for r in resources_unique if r.get('resource_type') == 'native')
+# Resumen del flujo cargado — conteo por tipo
+_type_counts = {}
+for r in resources_unique:
+    rt = r.get('resource_type', '')
+    _type_counts[rt] = _type_counts.get(rt, 0) + 1
 
-col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-col_s1.metric("📦 Recursos totales", len(resources_unique))
-col_s2.metric("📥 Fuentes", total_fuentes)
-col_s3.metric("⚖️ Conciliaciones", total_recons)
-# Nombre del JSON sin truncar con metric — usar markdown para control total
-with col_s4:
-    nombre_display = up.name if len(up.name) <= 28 else up.name[:25] + "…"
-    st.markdown(
-        "<div style='font-size:0.75rem;color:#888;margin-bottom:4px'>📄 JSON cargado</div>"
-        "<div style='font-size:0.95rem;font-weight:600;color:#1a1a1a;word-break:break-all'>"
-        + nombre_display + "</div>",
-        unsafe_allow_html=True
+_total          = len(resources_unique)
+_fuentes        = _type_counts.get('native', 0)
+_uniones        = _type_counts.get('source_union', 0)
+_agrupaciones   = _type_counts.get('source_group', 0)
+_recons_std     = _type_counts.get('reconciliation', 0)
+_recons_adv     = _type_counts.get('advanced_reconciliation', 0)
+_recons_total   = _recons_std + _recons_adv
+_nombre_display = up.name if len(up.name) <= 30 else up.name[:27] + "…"
+
+def _metric_card(label, value, color="#EA0050"):
+    return (
+        "<div style='background:#fff;border:1px solid #f0f0f0;border-radius:10px;"
+        "padding:12px 16px;text-align:center'>"
+        "<div style='font-size:0.72rem;color:#999;font-family:Roboto,sans-serif;"
+        "margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px'>" + label + "</div>"
+        "<div style='font-size:1.6rem;font-weight:700;color:" + color + ";font-family:Roboto,sans-serif;line-height:1'>"
+        + str(value) + "</div></div>"
     )
+
+_cards_html = (
+    "<div style='display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px'>"
+    + _metric_card("Total", _total, "#1a1a1a")
+    + _metric_card("Fuentes", _fuentes, RT_COLOR['native'])
+    + _metric_card("Uniones", _uniones, RT_COLOR['source_union'])
+    + _metric_card("Agrupaciones", _agrupaciones, RT_COLOR['source_group'])
+    + _metric_card("Conc. Std", _recons_std, RT_COLOR['reconciliation'])
+    + _metric_card("Conc. Avz", _recons_adv, RT_COLOR['advanced_reconciliation'])
+    + ("<div style='background:#fff;border:1px solid #f0f0f0;border-radius:10px;"
+       "padding:12px 16px;text-align:left'>"
+       "<div style='font-size:0.72rem;color:#999;font-family:Roboto,sans-serif;"
+       "margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px'>JSON cargado</div>"
+       "<div style='font-size:0.82rem;font-weight:600;color:#333;font-family:Roboto,sans-serif;"
+       "word-break:break-all;line-height:1.3'>" + _nombre_display + "</div></div>")
+    + "</div>"
+)
+st.markdown(_cards_html, unsafe_allow_html=True)
 
 st.markdown("<hr style='margin:16px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
 
@@ -1045,33 +1082,40 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         st.success("✅ Excel generado con **" + str(n_sel) + "** recursos documentados.")
         st.markdown("""
 <style>
-@keyframes ride1{0%{transform:translateX(-160px);opacity:0}6%{opacity:1}85%{opacity:1}100%{transform:translateX(760px);opacity:0}}
-@keyframes ride2{0%{transform:translateX(-160px);opacity:0}6%{opacity:1}85%{opacity:1}100%{transform:translateX(760px);opacity:0}}
-@keyframes ride3{0%{transform:translateX(-160px);opacity:0}6%{opacity:1}85%{opacity:1}100%{transform:translateX(760px);opacity:0}}
+@keyframes ride1{0%{left:-180px;opacity:0}6%{opacity:1}85%{opacity:1}100%{left:110vw;opacity:0}}
+@keyframes ride2{0%{left:-180px;opacity:0}6%{opacity:1}85%{opacity:1}100%{left:110vw;opacity:0}}
+@keyframes ride3{0%{left:-180px;opacity:0}6%{opacity:1}85%{opacity:1}100%{left:110vw;opacity:0}}
 @keyframes wspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-@keyframes road{from{stroke-dashoffset:0}to{stroke-dashoffset:-60}}
-@keyframes popin{0%{transform:scale(0);opacity:0}65%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
-@keyframes fadein{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
-@keyframes scenefade{0%{opacity:1}80%{opacity:1}100%{opacity:0;pointer-events:none}}
-.py-scene{width:100%;height:200px;overflow:hidden;position:relative;background:#fff;border-radius:14px;border:1.5px solid #EA005022;animation:scenefade 4s ease-in-out 0.2s both}
-.py-road{animation:road .35s linear infinite}
-.py-m1{position:absolute;bottom:52px;animation:ride1 3.2s cubic-bezier(.2,.8,.4,1) 0.0s both}
-.py-m2{position:absolute;bottom:58px;animation:ride2 3.2s cubic-bezier(.2,.8,.4,1) 0.5s both}
-.py-m3{position:absolute;bottom:46px;animation:ride3 3.2s cubic-bezier(.2,.8,.4,1) 1.0s both}
+@keyframes road-anim{from{stroke-dashoffset:0}to{stroke-dashoffset:-60}}
+@keyframes popin2{0%{transform:translate(-50%,-50%) scale(0);opacity:0}65%{transform:translate(-50%,-50%) scale(1.1);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes fadein2{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes overlay-fade{0%{opacity:1}78%{opacity:1}100%{opacity:0;pointer-events:none}}
+.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(255,255,255,0.97);animation:overlay-fade 4.4s ease .1s both;pointer-events:none}
+.py-bg-p{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);opacity:.06}
+.py-road-svg{position:absolute;bottom:0;left:0;width:100%;height:32px}
+.py-road-line{animation:road-anim .35s linear infinite}
+.py-m1{position:absolute;bottom:32px;animation:ride1 3.4s cubic-bezier(.2,.8,.4,1) 0.0s both}
+.py-m2{position:absolute;bottom:44px;animation:ride2 3.4s cubic-bezier(.2,.8,.4,1) 0.5s both}
+.py-m3{position:absolute;bottom:24px;animation:ride3 3.4s cubic-bezier(.2,.8,.4,1) 1.0s both}
 .py-w{transform-origin:50% 50%;animation:wspin .22s linear infinite}
-.py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:50px;height:3px;background:linear-gradient(90deg,transparent,#EA005044);border-radius:2px}
-.py-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);display:flex;flex-direction:column;align-items:center;gap:10px}
-.py-check{width:68px;height:68px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin .5s cubic-bezier(.175,.885,.32,1.275) .3s both}
-.py-msg{font-family:'Roboto',system-ui,sans-serif;font-size:1.05rem;font-weight:700;color:#EA0050;background:#fff;padding:5px 18px;border-radius:20px;border:1.5px solid #EA005033;animation:fadein .4s ease .7s both;white-space:nowrap}
+.py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:70px;height:4px;background:linear-gradient(90deg,transparent,#EA005055);border-radius:2px}
+.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both}
+.py-msg2{position:absolute;top:calc(50% + 75px);left:50%;font-family:Roboto,system-ui,sans-serif;font-size:1.4rem;font-weight:700;color:#EA0050;background:#fff;padding:10px 32px;border-radius:28px;border:2px solid #EA005033;white-space:nowrap;animation:fadein2 .4s ease .8s both;box-shadow:0 4px 24px rgba(234,0,80,.12)}
 </style>
-<div class="py-scene">
-  <svg width="100%" height="100%" style="position:absolute;top:0;left:0;pointer-events:none">
-    <line x1="0" y1="175" x2="100%" y2="175" stroke="#EA005018" stroke-width="1"/>
-    <line class="py-road" x1="0" y1="180" x2="100%" y2="180" stroke="#EA0050" stroke-width="2" stroke-dasharray="30 20" opacity=".28"/>
+<div class="py-overlay">
+  <div class="py-bg-p">
+    <svg width="500" height="500" viewBox="0 0 200 200">
+      <path d="M30 10 L130 10 Q180 10 180 70 Q180 130 130 130 L90 130 L90 190 L30 190 Z M90 55 L90 85 L127 85 Q140 85 140 70 Q140 55 127 55 Z" fill="#EA0050"/>
+    </svg>
+  </div>
+  <svg class="py-road-svg">
+    <rect width="100%" height="32" fill="#f8f8f8"/>
+    <line x1="0" y1="8" x2="100%" y2="8" stroke="#eee" stroke-width="1"/>
+    <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".3"/>
+    <line x1="0" y1="31" x2="100%" y2="31" stroke="#eee" stroke-width="1"/>
   </svg>
-  <div class="py-m1"><div style="position:relative">
-    <div class="py-trail"></div>
-    <svg width="110" height="58" viewBox="0 0 110 58">
+  <div class="py-m1"><div style="position:relative"><div class="py-trail"></div>
+    <svg width="130" height="68" viewBox="0 0 110 58">
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".75"/>
@@ -1084,21 +1128,12 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
       <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
       <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
-      <g transform="translate(85,43)">
-        <circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/>
-        <g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#666" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#666" stroke-width="1"/></g>
-        <circle r="3" fill="#EA0050"/>
-      </g>
-      <g transform="translate(20,43)">
-        <circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/>
-        <g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#666" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#666" stroke-width="1"/></g>
-        <circle r="3.5" fill="#EA0050"/>
-      </g>
+      <g transform="translate(85,43)"><circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#666" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#666" stroke-width="1"/></g><circle r="3" fill="#EA0050"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#666" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#666" stroke-width="1"/></g><circle r="3.5" fill="#EA0050"/></g>
     </svg>
   </div></div>
-  <div class="py-m2" style="bottom:64px"><div style="position:relative">
-    <div class="py-trail"></div>
-    <svg width="92" height="50" viewBox="0 0 110 58">
+  <div class="py-m2"><div style="position:relative"><div class="py-trail"></div>
+    <svg width="108" height="56" viewBox="0 0 110 58">
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#C0003A"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#A00030"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
@@ -1111,21 +1146,12 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
       <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
       <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
-      <g transform="translate(85,43)">
-        <circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/>
-        <g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g>
-        <circle r="3" fill="#C0003A"/>
-      </g>
-      <g transform="translate(20,43)">
-        <circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/>
-        <g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g>
-        <circle r="3.5" fill="#C0003A"/>
-      </g>
+      <g transform="translate(85,43)"><circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3" fill="#C0003A"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3.5" fill="#C0003A"/></g>
     </svg>
   </div></div>
-  <div class="py-m3" style="bottom:44px"><div style="position:relative">
-    <div class="py-trail"></div>
-    <svg width="78" height="42" viewBox="0 0 110 58">
+  <div class="py-m3"><div style="position:relative"><div class="py-trail"></div>
+    <svg width="90" height="48" viewBox="0 0 110 58">
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
@@ -1138,24 +1164,16 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
       <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
       <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
-      <g transform="translate(85,43)">
-        <circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/>
-        <g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g>
-        <circle r="3" fill="#EA0050"/>
-      </g>
-      <g transform="translate(20,43)">
-        <circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/>
-        <g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g>
-        <circle r="3.5" fill="#EA0050"/>
-      </g>
+      <g transform="translate(85,43)"><circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3" fill="#EA0050"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3.5" fill="#EA0050"/></g>
     </svg>
   </div></div>
-  <div class="py-badge">
-    <div class="py-check">
-      <svg width="34" height="34" viewBox="0 0 36 36" fill="none"><polyline points="6,18 14,26 30,10" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <div class="py-msg">Reporte listo — a correr!</div>
+  <div class="py-check2">
+    <svg width="56" height="56" viewBox="0 0 36 36" fill="none">
+      <polyline points="5,18 13,27 31,9" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   </div>
+  <div class="py-msg2">Reporte listo â a correr!</div>
 </div>
 """, unsafe_allow_html=True)
         st.download_button(
