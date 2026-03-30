@@ -1042,8 +1042,122 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         excel_bytes = generar_excel(data, selected_ids)
         prog.progress(90, text="Aplicando estilos...")
         prog.progress(100, text="Listo.")
-        st.success(f"✅ Excel generado con **" + str(n_sel) + "** recursos documentados.")
-        st.balloons()
+        st.success("✅ Excel generado con **" + str(n_sel) + "** recursos documentados.")
+        st.markdown("""
+<style>
+@keyframes ride1{0%{transform:translateX(-160px);opacity:0}6%{opacity:1}85%{opacity:1}100%{transform:translateX(760px);opacity:0}}
+@keyframes ride2{0%{transform:translateX(-160px);opacity:0}6%{opacity:1}85%{opacity:1}100%{transform:translateX(760px);opacity:0}}
+@keyframes ride3{0%{transform:translateX(-160px);opacity:0}6%{opacity:1}85%{opacity:1}100%{transform:translateX(760px);opacity:0}}
+@keyframes wspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes road{from{stroke-dashoffset:0}to{stroke-dashoffset:-60}}
+@keyframes popin{0%{transform:scale(0);opacity:0}65%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes fadein{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes scenefade{0%{opacity:1}80%{opacity:1}100%{opacity:0;pointer-events:none}}
+.py-scene{width:100%;height:200px;overflow:hidden;position:relative;background:#fff;border-radius:14px;border:1.5px solid #EA005022;animation:scenefade 4s ease-in-out 0.2s both}
+.py-road{animation:road .35s linear infinite}
+.py-m1{position:absolute;bottom:52px;animation:ride1 3.2s cubic-bezier(.2,.8,.4,1) 0.0s both}
+.py-m2{position:absolute;bottom:58px;animation:ride2 3.2s cubic-bezier(.2,.8,.4,1) 0.5s both}
+.py-m3{position:absolute;bottom:46px;animation:ride3 3.2s cubic-bezier(.2,.8,.4,1) 1.0s both}
+.py-w{transform-origin:50% 50%;animation:wspin .22s linear infinite}
+.py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:50px;height:3px;background:linear-gradient(90deg,transparent,#EA005044);border-radius:2px}
+.py-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);display:flex;flex-direction:column;align-items:center;gap:10px}
+.py-check{width:68px;height:68px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin .5s cubic-bezier(.175,.885,.32,1.275) .3s both}
+.py-msg{font-family:'Roboto',system-ui,sans-serif;font-size:1.05rem;font-weight:700;color:#EA0050;background:#fff;padding:5px 18px;border-radius:20px;border:1.5px solid #EA005033;animation:fadein .4s ease .7s both;white-space:nowrap}
+</style>
+<div class="py-scene">
+  <svg width="100%" height="100%" style="position:absolute;top:0;left:0;pointer-events:none">
+    <line x1="0" y1="175" x2="100%" y2="175" stroke="#EA005018" stroke-width="1"/>
+    <line class="py-road" x1="0" y1="180" x2="100%" y2="180" stroke="#EA0050" stroke-width="2" stroke-dasharray="30 20" opacity=".28"/>
+  </svg>
+  <div class="py-m1"><div style="position:relative">
+    <div class="py-trail"></div>
+    <svg width="110" height="58" viewBox="0 0 110 58">
+      <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
+      <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
+      <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".75"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#333"/>
+      <ellipse cx="36" cy="13" rx="10" ry="7" fill="#111"/>
+      <ellipse cx="39" cy="14" rx="4" ry="3" fill="#EA0050"/>
+      <rect x="30" y="19" width="16" height="9" rx="3" fill="#111"/>
+      <rect x="22" y="18" width="16" height="14" rx="2" fill="#EA0050" stroke="#fff" stroke-width="1.2"/>
+      <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
+      <g transform="translate(85,43)">
+        <circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/>
+        <g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#666" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#666" stroke-width="1"/></g>
+        <circle r="3" fill="#EA0050"/>
+      </g>
+      <g transform="translate(20,43)">
+        <circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/>
+        <g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#666" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#666" stroke-width="1"/></g>
+        <circle r="3.5" fill="#EA0050"/>
+      </g>
+    </svg>
+  </div></div>
+  <div class="py-m2" style="bottom:64px"><div style="position:relative">
+    <div class="py-trail"></div>
+    <svg width="92" height="50" viewBox="0 0 110 58">
+      <rect x="20" y="14" width="56" height="18" rx="7" fill="#C0003A"/>
+      <polygon points="76,14 90,20 90,28 76,32" fill="#A00030"/>
+      <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#333"/>
+      <ellipse cx="36" cy="13" rx="10" ry="7" fill="#EA0050"/>
+      <ellipse cx="39" cy="14" rx="4" ry="3" fill="#fff" opacity=".6"/>
+      <rect x="30" y="19" width="16" height="9" rx="3" fill="#EA0050"/>
+      <rect x="22" y="18" width="16" height="14" rx="2" fill="#C0003A" stroke="#fff" stroke-width="1.2"/>
+      <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
+      <g transform="translate(85,43)">
+        <circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/>
+        <g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g>
+        <circle r="3" fill="#C0003A"/>
+      </g>
+      <g transform="translate(20,43)">
+        <circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/>
+        <g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g>
+        <circle r="3.5" fill="#C0003A"/>
+      </g>
+    </svg>
+  </div></div>
+  <div class="py-m3" style="bottom:44px"><div style="position:relative">
+    <div class="py-trail"></div>
+    <svg width="78" height="42" viewBox="0 0 110 58">
+      <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
+      <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
+      <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#333"/>
+      <ellipse cx="36" cy="13" rx="10" ry="7" fill="#222"/>
+      <ellipse cx="39" cy="14" rx="4" ry="3" fill="#EA0050"/>
+      <rect x="30" y="19" width="16" height="9" rx="3" fill="#222"/>
+      <rect x="22" y="18" width="16" height="14" rx="2" fill="#EA0050" stroke="#fff" stroke-width="1.2"/>
+      <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
+      <g transform="translate(85,43)">
+        <circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/>
+        <g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g>
+        <circle r="3" fill="#EA0050"/>
+      </g>
+      <g transform="translate(20,43)">
+        <circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/>
+        <g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g>
+        <circle r="3.5" fill="#EA0050"/>
+      </g>
+    </svg>
+  </div></div>
+  <div class="py-badge">
+    <div class="py-check">
+      <svg width="34" height="34" viewBox="0 0 36 36" fill="none"><polyline points="6,18 14,26 30,10" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="py-msg">Reporte listo — a correr!</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
         st.download_button(
             label="📥  Descargar Excel",
             data=excel_bytes,
