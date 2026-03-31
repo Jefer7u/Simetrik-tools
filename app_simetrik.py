@@ -829,33 +829,15 @@ div[data-testid="stDownloadButton"] button {
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='background:linear-gradient(135deg,#EA0050 0%,#C0003A 100%);
-    padding:20px 32px;border-radius:14px;
-    box-shadow:0 4px 20px rgba(234,0,80,0.2);margin-bottom:20px'>
-    <div style='display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px'>
-        <div style='display:flex;align-items:center;gap:20px'>
-            <svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 200 200'>
-                <path d='M60 20 L130 20 Q170 20 170 65 Q170 110 130 110 L100 110 L100 180 L60 180 Z
-                         M100 50 L100 80 L128 80 Q138 80 138 65 Q138 50 128 50 Z'
-                      fill='white'/>
-            </svg>
-            <div>
-                <div style='color:white;font-family:Roboto,Arial,sans-serif;
-                    font-size:1.5rem;font-weight:700;letter-spacing:-0.3px;line-height:1.2'>
-                    Simetrik Documentation
-                </div>
-                <div style='color:rgba(255,255,255,0.8);font-family:Roboto,Arial,sans-serif;
-                    font-size:0.85rem;margin-top:3px'>
-                    PedidosYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
-                </div>
-            </div>
-        </div>
-        <svg xmlns='http://www.w3.org/2000/svg' height='28' viewBox='0 0 520 90' fill='white'>
-            <path d='M10 5 L68 5 Q98 5 98 38 Q98 70 68 70 L46 70 L46 85 L10 85 Z
-                     M46 28 L46 47 L66 47 Q74 47 74 38 Q74 28 66 28 Z'/>
-            <text x='112' y='68' font-family='Arial Black,Arial' font-weight='900'
-                  font-size='72' fill='white' letter-spacing='-1'>PedidosYa</text>
-        </svg>
+<div style='background:#EA0050;padding:22px 32px;border-radius:14px;
+    box-shadow:0 4px 20px rgba(234,0,80,0.18);margin-bottom:20px'>
+    <div style='color:white;font-family:Roboto,Arial,sans-serif;
+        font-size:1.6rem;font-weight:700;letter-spacing:-0.4px'>
+        Simetrik Documentation
+    </div>
+    <div style='color:rgba(255,255,255,0.78);font-family:Roboto,Arial,sans-serif;
+        font-size:0.88rem;margin-top:4px'>
+        PedidosYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
     </div>
 </div>""", unsafe_allow_html=True)
 
@@ -1068,7 +1050,7 @@ else:
     st.warning("Selecciona al menos un recurso para continuar.")
     st.stop()
 
-nombre_dl = f"{os.path.splitext(up.name)[0]}_DOC_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
+nombre_dl = "skt_doc_" + os.path.splitext(up.name)[0] + "_" + datetime.now().strftime('%Y-%m-%d_%H%M') + ".xlsx"
 
 if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
     prog = st.progress(0, text="Iniciando...")
@@ -1091,7 +1073,6 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 @keyframes fadein2{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes overlay-fade{0%{opacity:1}78%{opacity:1}100%{opacity:0;pointer-events:none}}
 .py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(255,255,255,0.97);animation:overlay-fade 4.4s ease .1s both;pointer-events:none}
-.py-bg-p{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);opacity:.06}
 .py-road-svg{position:absolute;bottom:0;left:0;width:100%;height:32px}
 .py-road-line{animation:road-anim .35s linear infinite}
 .py-m1{position:absolute;bottom:32px;animation:ride1 3.4s cubic-bezier(.2,.8,.4,1) 0.0s both}
@@ -1103,11 +1084,6 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 .py-msg2{position:absolute;top:calc(50% + 75px);left:50%;font-family:Roboto,system-ui,sans-serif;font-size:1.4rem;font-weight:700;color:#EA0050;background:#fff;padding:10px 32px;border-radius:28px;border:2px solid #EA005033;white-space:nowrap;animation:fadein2 .4s ease .8s both;box-shadow:0 4px 24px rgba(234,0,80,.12)}
 </style>
 <div class="py-overlay">
-  <div class="py-bg-p">
-    <svg width="500" height="500" viewBox="0 0 200 200">
-      <path d="M30 10 L130 10 Q180 10 180 70 Q180 130 130 130 L90 130 L90 190 L30 190 Z M90 55 L90 85 L127 85 Q140 85 140 70 Q140 55 127 55 Z" fill="#EA0050"/>
-    </svg>
-  </div>
   <svg class="py-road-svg">
     <rect width="100%" height="32" fill="#f8f8f8"/>
     <line x1="0" y1="8" x2="100%" y2="8" stroke="#eee" stroke-width="1"/>
