@@ -1072,7 +1072,7 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 @keyframes popin2{0%{transform:translate(-50%,-50%) scale(0);opacity:0}65%{transform:translate(-50%,-50%) scale(1.1);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @keyframes fadein2{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes overlay-fade{0%{opacity:1}78%{opacity:1}100%{opacity:0;pointer-events:none}}
-.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(255,255,255,0.97);animation:overlay-fade 4.4s ease .1s both;pointer-events:none}
+.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(18,18,18,0.93);animation:overlay-fade 4.4s ease .1s both;pointer-events:none}
 .py-road-svg{position:absolute;bottom:0;left:0;width:100%;height:32px}
 .py-road-line{animation:road-anim .35s linear infinite}
 .py-m1{position:absolute;bottom:32px;animation:ride1 3.4s cubic-bezier(.2,.8,.4,1) 0.0s both}
@@ -1081,14 +1081,14 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 .py-w{transform-origin:50% 50%;animation:wspin .22s linear infinite}
 .py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:70px;height:4px;background:linear-gradient(90deg,transparent,#EA005055);border-radius:2px}
 .py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both}
-.py-msg2{position:absolute;top:calc(50% + 75px);left:50%;font-family:Roboto,system-ui,sans-serif;font-size:1.4rem;font-weight:700;color:#EA0050;background:#fff;padding:10px 32px;border-radius:28px;border:2px solid #EA005033;white-space:nowrap;animation:fadein2 .4s ease .8s both;box-shadow:0 4px 24px rgba(234,0,80,.12)}
+.py-msg2{position:absolute;top:calc(50% + 75px);left:50%;font-family:Roboto,system-ui,sans-serif;font-size:1.3rem;font-weight:600;color:#ffffff;background:#EA0050;padding:10px 34px;border-radius:28px;border:none;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.2px}
 </style>
 <div class="py-overlay">
   <svg class="py-road-svg">
-    <rect width="100%" height="32" fill="#f8f8f8"/>
-    <line x1="0" y1="8" x2="100%" y2="8" stroke="#eee" stroke-width="1"/>
+    <rect width="100%" height="32" fill="#1a1a1a"/>
+    <line x1="0" y1="8" x2="100%" y2="8" stroke="#333" stroke-width="1"/>
     <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".3"/>
-    <line x1="0" y1="31" x2="100%" y2="31" stroke="#eee" stroke-width="1"/>
+    <line x1="0" y1="31" x2="100%" y2="31" stroke="#333" stroke-width="1"/>
   </svg>
   <div class="py-m1"><div style="position:relative"><div class="py-trail"></div>
     <svg width="130" height="68" viewBox="0 0 110 58">
@@ -1149,7 +1149,7 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <polyline points="5,18 13,27 31,9" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </div>
-  <div class="py-msg2">Reporte listo â a correr!</div>
+  <div class="py-msg2">Pedido listo, ya puedes descargarlo</div>
 </div>
 """, unsafe_allow_html=True)
         st.download_button(
