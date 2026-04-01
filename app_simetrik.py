@@ -803,10 +803,28 @@ div[data-testid], p, span, label, h1, h2, h3, h4 {
 /* Monospace para IDs */
 code, .font-mono { font-family: 'Roboto Mono', monospace !important; }
 
-/* Quitar padding top excesivo */
+/* Layout */
 .block-container { padding-top: 1.5rem !important; }
 
-/* Progress bar generación */
+/* Fix uploader button overlap — hide the internal text node that duplicates */
+div[data-testid="stFileUploader"] section button span { display: none !important; }
+div[data-testid="stFileUploader"] section button::after {
+    content: 'Buscar archivo';
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+div[data-testid="stFileUploader"] section {
+    border: 1.5px dashed #EA005055 !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+}
+div[data-testid="stFileUploader"] section:hover {
+    border-color: #EA0050 !important;
+    background: rgba(234,0,80,0.03) !important;
+}
+
+/* Progress bar */
 .stProgress > div > div { background: #EA0050 !important; }
 
 /* Botón primary */
@@ -818,12 +836,8 @@ div[data-testid="stButton"] button[kind="primary"] {
     letter-spacing: 0.3px;
     font-family: 'Roboto', sans-serif !important;
 }
-div[data-testid="stButton"] button[kind="primary"]:hover {
-    background: #C0003A !important;
-}
-div[data-testid="stDownloadButton"] button {
-    font-family: 'Roboto', sans-serif !important;
-}
+div[data-testid="stButton"] button[kind="primary"]:hover { background: #C0003A !important; }
+div[data-testid="stDownloadButton"] button { font-family: 'Roboto', sans-serif !important; }
 </style>
 """, unsafe_allow_html=True)
 
