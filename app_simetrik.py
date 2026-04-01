@@ -14,7 +14,7 @@ st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", lay
 # ══════════════════════════════════════════════════════════════════════════════
 C = {
     "red":    "EA0050", "white": "FFFFFF", "grey":  "F9FAFB", # Zebra súper sutil
-    "dark":   "2B2B2B", "border":"E5E7EB", "blue":  "2563EB", # Gris oscuro corporativo
+    "dark":   "2B2B2B", "border":"E5E7EB", "blue":  "2563EB", 
     "teal":   "0D9488", "amber": "D97706", "purple":"7C3AED",
     "green":  "16A34A", "slate": "475569", "rose":  "E11D48", 
 }
@@ -30,13 +30,13 @@ RT_LABEL = {
     "cumulative_balance":      "📈 Balance Acumulado",
 }
 
-# Colores vivos para modo claro
+# Colores únicos por tipo de recurso
 RT_COLOR = {
     "native":                  "3B82F6", 
     "source_union":            "0D9488", 
     "source_group":            "D97706", 
     "reconciliation":          "EA0050", # PeYa Red
-    "advanced_reconciliation": "7C3AED", 
+    "advanced_reconciliation": "7C3AED", # Un solo violeta para todo el recurso
     "consolidation":           "475569", 
     "resource_join":           "16A34A", 
     "cumulative_balance":      "16A34A", 
@@ -50,7 +50,7 @@ RT_ORDER = {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HELPERS OPENPYXL (Bordes perfectos en celdas combinadas)
+# HELPERS OPENPYXL (Refactorizados para evitar MergedCell Errors)
 # ══════════════════════════════════════════════════════════════════════════════
 def mk_border():
     t = Side(border_style="thin", color=C["border"])
@@ -70,28 +70,29 @@ def hdr(cell, text, bg=C["dark"]):
        ha='center', va='center', wrap=False)
 
 def section_title(ws, row, text, bg=C["red"], cols=5):
-    ws.merge_cells(f'A{row}:{chr(64+cols)}{row}')
-    # Pintar todas las celdas debajo del merge para garantizar el borde derecho
+    # Asignar valores y bordes ANTES de hacer merge
     for i in range(1, cols + 1):
-        c = ws.cell(row, i, text if i == 1 else "")
-        sc(c, bg=bg, bold=True, color=C["white"], size=10,
-           ha='left', va='center', wrap=False)
+        c = ws.cell(row=row, column=i)
+        if i == 1: c.value = text
+        sc(c, bg=bg, bold=True, color=C["white"], size=10, ha='left', va='center', wrap=False)
+    
+    ws.merge_cells(f'A{row}:{chr(64+cols)}{row}')
     ws.row_dimensions[row].height = 20
     return row + 1
 
-def meta_row(ws, row, label, value, cols=5, bg_val=None):
+def meta_row(ws, row, label, value, cols=5, bg_val=None, bg_label=C["slate"]):
     bg_val = bg_val or C["grey"]
-    c_l = ws.cell(row, 1, label)
-    sc(c_l, bg=C["slate"], bold=True, color=C["white"], size=9,
-       ha='left', va='center', wrap=False)
+    c_l = ws.cell(row=row, column=1)
+    c_l.value = label
+    sc(c_l, bg=bg_label, bold=True, color=C["white"], size=9, ha='left', va='center', wrap=False)
     
-    ws.merge_cells(f'B{row}:{chr(64+cols)}{row}')
     val_str = str(value) if value is not None else "—"
-    # Pintar todas las celdas combinadas para garantizar bordes completos
     for i in range(2, cols + 1):
-        c = ws.cell(row, i, val_str if i == 2 else "")
+        c = ws.cell(row=row, column=i)
+        if i == 2: c.value = val_str
         sc(c, bg=bg_val, size=9, va='center', wrap=True)
         
+    ws.merge_cells(f'B{row}:{chr(64+cols)}{row}')
     ws.row_dimensions[row].height = 14
     return row + 1
 
@@ -439,22 +440,24 @@ def generar_excel(data, selected_ids):
         ws = wb.create_sheet("📚 Índice", 0)
         ws.sheet_view.showGridLines = False
 
-        ws.merge_cells('A1:G1')
         for i in range(1, 8):
-            c = ws.cell(1, i, "SIMETRIK DOCUMENTATION  ·  PeYa Finance Operations & Payments" if i == 1 else "")
+            c = ws.cell(row=1, column=i)
+            if i == 1: c.value = "SIMETRIK DOCUMENTATION  ·  PeYa Finance Operations & Payments"
             sc(c, bg=C["red"], bold=True, color=C["white"], size=13, ha='center', va='center', wrap=False)
+        ws.merge_cells('A1:G1')
         ws.row_dimensions[1].height = 32
 
-        ws.merge_cells('A2:G2')
         for i in range(1, 8):
-            c = ws.cell(2, i, f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}   |   Recursos documentados: {len(resources)}" if i == 1 else "")
+            c = ws.cell(row=2, column=i)
+            if i == 1: c.value = f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}   |   Recursos documentados: {len(resources)}"
             sc(c, bg=C["dark"], color=C["white"], size=9, ha='center', va='center', wrap=False)
+        ws.merge_cells('A2:G2')
         ws.row_dimensions[2].height = 15
 
         idx_hdrs = ["#", "ID", "NOMBRE DEL RECURSO", "TIPO",
                     "PROVIENE DE", "ALIMENTA A", "LINK 🔗"]
         for i, h in enumerate(idx_hdrs, 1):
-            hdr(ws.cell(4, i, h), h, bg=C["dark"])
+            hdr(ws.cell(row=4, column=i), h, bg=C["dark"])
         ws.row_dimensions[4].height = 20
         
         ws.freeze_panes = "A5"
@@ -489,38 +492,40 @@ def generar_excel(data, selected_ids):
             eid  = res.get('export_id')
             rt   = res.get('resource_type', '')
             name = res.get('name', '')
-            tc   = RT_COLOR.get(rt, C["dark"])
+            tc   = RT_COLOR.get(rt, C["dark"])  # Color de la temática de ESTE recurso
             COLS = 5
 
             ws = wb.create_sheet(map_hojas[eid])
             ws.sheet_view.showGridLines = False
 
             row = 1
-            ws.merge_cells(f'A{row}:E{row}')
             for i in range(1, 6):
-                c = ws.cell(row, i, RT_LABEL.get(rt, '') + "  ·  " + name if i == 1 else "")
+                c = ws.cell(row=row, column=i)
+                if i == 1: c.value = RT_LABEL.get(rt, '') + "  ·  " + name
                 sc(c, bg=tc, bold=True, color=C["white"], size=12, ha='left', va='center', wrap=False)
+            ws.merge_cells(f'A{row}:E{row}')
             ws.row_dimensions[row].height = 30
             row += 1
             
             ws.freeze_panes = "A2"
 
-            row = meta_row(ws, row, "ID Recurso",  eid,  cols=COLS)
-            row = meta_row(ws, row, "Tipo",        RT_LABEL.get(rt, rt), cols=COLS)
+            # Etiquetas también toman el color de la temática
+            row = meta_row(ws, row, "ID Recurso",  eid,  cols=COLS, bg_label=tc)
+            row = meta_row(ws, row, "Tipo",        RT_LABEL.get(rt, rt), cols=COLS, bg_label=tc)
             row = meta_row(ws, row, "Proviene de",
-                           ", ".join(rels[eid]["parents"]) or "Origen", cols=COLS)
+                           ", ".join(rels[eid]["parents"]) or "Origen", cols=COLS, bg_label=tc)
             row = meta_row(ws, row, "Alimenta a",
-                           ", ".join(rels[eid]["children"]) or "Fin de flujo", cols=COLS)
+                           ", ".join(rels[eid]["children"]) or "Fin de flujo", cols=COLS, bg_label=tc)
             row += 1
 
             std = parse_std_reconciliation(res.get('reconciliation'), res_map, col_map, seg_map)
             if std:
-                row = section_title(ws, row, "⚖️  REGLAS DE CONCILIACIÓN ESTÁNDAR", bg=C["red"], cols=COLS)
-                row = section_title(ws, row, "  GRUPOS CONCILIABLES ACTIVOS", bg=C["rose"], cols=COLS)
+                row = section_title(ws, row, "⚖️  REGLAS DE CONCILIACIÓN ESTÁNDAR", bg=tc, cols=COLS)
+                row = section_title(ws, row, "  GRUPOS CONCILIABLES ACTIVOS", bg=tc, cols=COLS)
                 
                 for col_n, h in enumerate(["LADO", "RECURSO", "GRUPO CONCILIABLE (ACTIVO)", "FILTROS DEL GRUPO"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg=C["rose"])
-                hdr(ws.cell(row, 5, ""), "", bg=C["rose"])
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
+                hdr(ws.cell(row=row, column=5), "", bg=tc)
                 ws.merge_cells(f'D{row}:E{row}')
                 ws.row_dimensions[row].height = 18
                 row += 1
@@ -528,51 +533,50 @@ def generar_excel(data, selected_ids):
                 for i, side in enumerate(std['sides']):
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
                     trig = "  [TRIGGER]" if side['is_trigger'] else ""
-                    c1 = ws.cell(row, 1, side['prefix'] + trig)
-                    c2 = ws.cell(row, 2, side['resource_name'])
-                    c3 = ws.cell(row, 3, side['group_name'])
-                    c4 = ws.cell(row, 4, side['group_filters'])
-                    c5 = ws.cell(row, 5, "")
-                    ws.merge_cells(f'D{row}:E{row}')
-                    n_lines = side['group_filters'].count('\n') + 1
+                    c1 = ws.cell(row=row, column=1); c1.value = side['prefix'] + trig
+                    c2 = ws.cell(row=row, column=2); c2.value = side['resource_name']
+                    c3 = ws.cell(row=row, column=3); c3.value = side['group_name']
+                    c4 = ws.cell(row=row, column=4); c4.value = side['group_filters']
+                    c5 = ws.cell(row=row, column=5); c5.value = ""
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
-                    ws.row_dimensions[row].height = row_height(n_lines)
+                    ws.merge_cells(f'D{row}:E{row}')
+                    ws.row_dimensions[row].height = row_height(side['group_filters'].count('\n') + 1)
                     row += 1
                 row += 1
 
-                row = meta_row(ws, row, "Conciliación encadenada", "Sí" if std['is_chained'] else "No", cols=COLS)
+                row = meta_row(ws, row, "Conciliación encadenada", "Sí" if std['is_chained'] else "No", cols=COLS, bg_label=tc)
                 row += 1
 
-                row = section_title(ws, row, "  RULE SETS DE MATCHING", bg="C62828", cols=COLS)
+                row = section_title(ws, row, "  RULE SETS DE MATCHING", bg=tc, cols=COLS)
                 for col_n, h in enumerate(["POS.", "NOMBRE DEL RULE SET", "REGLAS  (A vs B)"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg="C62828")
-                hdr(ws.cell(row, 4, ""), "", bg="C62828")
-                hdr(ws.cell(row, 5, ""), "", bg="C62828")
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
+                hdr(ws.cell(row=row, column=4), "", bg=tc)
+                hdr(ws.cell(row=row, column=5), "", bg=tc)
                 ws.merge_cells(f'C{row}:E{row}')
                 ws.row_dimensions[row].height = 18
                 row += 1
 
                 for i, rs in enumerate(std['rule_sets']):
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
-                    c1 = ws.cell(row, 1, rs['pos'])
-                    c2 = ws.cell(row, 2, rs['name'])
-                    c3 = ws.cell(row, 3, "\n".join(rs['rules']))
-                    c4 = ws.cell(row, 4, "")
-                    c5 = ws.cell(row, 5, "")
-                    ws.merge_cells(f'C{row}:E{row}')
+                    c1 = ws.cell(row=row, column=1); c1.value = rs['pos']
+                    c2 = ws.cell(row=row, column=2); c2.value = rs['name']
+                    c3 = ws.cell(row=row, column=3); c3.value = "\n".join(rs['rules'])
+                    c4 = ws.cell(row=row, column=4); c4.value = ""
+                    c5 = ws.cell(row=row, column=5); c5.value = ""
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
+                    ws.merge_cells(f'C{row}:E{row}')
                     ws.row_dimensions[row].height = row_height(len(rs['rules']))
                     row += 1
                 row += 1
 
             adv_parsed = parse_adv_reconciliation(res.get('advanced_reconciliation'), res_map, col_map, seg_map, meta_map)
             if adv_parsed:
-                row = section_title(ws, row, "🔬  REGLAS DE CONCILIACIÓN AVANZADA", bg=C["purple"], cols=COLS)
-                row = section_title(ws, row, "  GRUPOS CONCILIABLES Y SEGMENTOS INTERNOS", bg="6A1B9A", cols=COLS)
+                row = section_title(ws, row, "🔬  REGLAS DE CONCILIACIÓN AVANZADA", bg=tc, cols=COLS)
+                row = section_title(ws, row, "  GRUPOS CONCILIABLES Y SEGMENTOS INTERNOS", bg=tc, cols=COLS)
                 for col_n, h in enumerate(["LADO", "RECURSO", "GRUPO CONCILIABLE", "FILTROS DEL GRUPO", "SEGMENTOS INTERNOS"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg="6A1B9A")
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
                 ws.row_dimensions[row].height = 18
                 row += 1
 
@@ -580,20 +584,20 @@ def generar_excel(data, selected_ids):
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
                     segs_txt = "\n".join(g['segments']) if g['segments'] else "(sin segmentación interna)"
                     n_lines = max(g['group_filters'].count('\n') + 1, len(g['segments']) if g['segments'] else 1)
-                    c1 = ws.cell(row, 1, g['prefix'])
-                    c2 = ws.cell(row, 2, g['resource_name'])
-                    c3 = ws.cell(row, 3, g['group_name'])
-                    c4 = ws.cell(row, 4, g['group_filters'])
-                    c5 = ws.cell(row, 5, segs_txt)
+                    c1 = ws.cell(row=row, column=1); c1.value = g['prefix']
+                    c2 = ws.cell(row=row, column=2); c2.value = g['resource_name']
+                    c3 = ws.cell(row=row, column=3); c3.value = g['group_name']
+                    c4 = ws.cell(row=row, column=4); c4.value = g['group_filters']
+                    c5 = ws.cell(row=row, column=5); c5.value = segs_txt
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
                     ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
                 row += 1
 
-                row = section_title(ws, row, "  RULE SETS (SEGMENTO A vs SEGMENTO B)", bg="4A148C", cols=COLS)
+                row = section_title(ws, row, "  RULE SETS (SEGMENTO A vs SEGMENTO B)", bg=tc, cols=COLS)
                 for col_n, h in enumerate(["POS.", "NOMBRE / TIPO", "REGLAS  (A vs B)", "SEGMENTO LADO A", "SEGMENTO LADO B"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg="4A148C")
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
                 ws.row_dimensions[row].height = 18
                 row += 1
 
@@ -606,11 +610,11 @@ def generar_excel(data, selected_ids):
                     seg_a = next((s.replace("Lado A: ", "") for s in rs['sweep'] if s.startswith("Lado A")), "—")
                     seg_b = next((s.replace("Lado B: ", "") for s in rs['sweep'] if s.startswith("Lado B")), "—")
 
-                    c1 = ws.cell(row, 1, rs['pos'])
-                    c2 = ws.cell(row, 2, name_txt)
-                    c3 = ws.cell(row, 3, "\n".join(rs['rules']))
-                    c4 = ws.cell(row, 4, seg_a)
-                    c5 = ws.cell(row, 5, seg_b)
+                    c1 = ws.cell(row=row, column=1); c1.value = rs['pos']
+                    c2 = ws.cell(row=row, column=2); c2.value = name_txt
+                    c3 = ws.cell(row=row, column=3); c3.value = "\n".join(rs['rules'])
+                    c4 = ws.cell(row=row, column=4); c4.value = seg_a
+                    c5 = ws.cell(row=row, column=5); c5.value = seg_b
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
                     n_lines = max(len(rs['rules']), 1)
@@ -620,20 +624,20 @@ def generar_excel(data, selected_ids):
 
             sg = res.get('source_group')
             if sg:
-                row = section_title(ws, row, "📊  CONFIGURACIÓN DE AGRUPACIÓN (GROUP BY)", bg=C["amber"], cols=COLS)
+                row = section_title(ws, row, "📊  CONFIGURACIÓN DE AGRUPACIÓN (GROUP BY)", bg=tc, cols=COLS)
                 group_cols, agg_vals = parse_source_group(sg, col_map)
-                row = meta_row(ws, row, "GROUP BY (dimensiones)", " | ".join(group_cols) or "—", cols=COLS, bg_val="FFF3E0")
+                row = meta_row(ws, row, "GROUP BY (dimensiones)", " | ".join(group_cols) or "—", cols=COLS, bg_val="FFF3E0", bg_label=tc)
                 agg_str = "  |  ".join(f"{fn}( {col} )" for fn, col in agg_vals)
-                row = meta_row(ws, row, "Agregaciones (métricas)", agg_str or "—", cols=COLS, bg_val="FFF3E0")
-                row = meta_row(ws, row, "Acumulativo", "Sí" if sg.get('is_accumulative') else "No", cols=COLS)
+                row = meta_row(ws, row, "Agregaciones (métricas)", agg_str or "—", cols=COLS, bg_val="FFF3E0", bg_label=tc)
+                row = meta_row(ws, row, "Acumulativo", "Sí" if sg.get('is_accumulative') else "No", cols=COLS, bg_label=tc)
                 row += 1
 
             su = res.get('source_union')
             if su:
-                row = section_title(ws, row, "🔗  CONFIGURACIÓN DE UNIÓN DE FUENTES", bg=C["teal"], cols=COLS)
+                row = section_title(ws, row, "🔗  CONFIGURACIÓN DE UNIÓN DE FUENTES", bg=tc, cols=COLS)
                 for col_n, h in enumerate(["FUENTE", "GRUPO CONCILIABLE", "ROL", "FILTROS DEL GRUPO"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg=C["teal"])
-                hdr(ws.cell(row, 5, ""), "", bg=C["teal"])
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
+                hdr(ws.cell(row=row, column=5), "", bg=tc)
                 ws.merge_cells(f'D{row}:E{row}')
                 ws.row_dimensions[row].height = 18
                 row += 1
@@ -647,26 +651,26 @@ def generar_excel(data, selected_ids):
                     rol = "TRIGGER · " + (us.get('trigger_type') or '') if us.get('is_trigger') else "Fuente adicional"
                     n_lines = max(filters_text.count('\n') + 1, 1)
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
-                    c1 = ws.cell(row, 1, resource_name)
-                    c2 = ws.cell(row, 2, group_name)
-                    c3 = ws.cell(row, 3, rol)
-                    c4 = ws.cell(row, 4, filters_text)
-                    c5 = ws.cell(row, 5, "")
-                    ws.merge_cells(f'D{row}:E{row}')
+                    c1 = ws.cell(row=row, column=1); c1.value = resource_name
+                    c2 = ws.cell(row=row, column=2); c2.value = group_name
+                    c3 = ws.cell(row=row, column=3); c3.value = rol
+                    c4 = ws.cell(row=row, column=4); c4.value = filters_text
+                    c5 = ws.cell(row=row, column=5); c5.value = ""
                     for c, al in [(c1,'left'),(c2,'left'),(c3,'center'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
+                    ws.merge_cells(f'D{row}:E{row}')
                     ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
                 row += 1
 
             segs_all = parse_segment_filters(res.get('segments', []), col_map)
             if segs_all:
-                row = section_title(ws, row, "🔍  GRUPOS CONCILIABLES DEL RECURSO", bg=C["slate"], cols=COLS)
+                row = section_title(ws, row, "🔍  GRUPOS CONCILIABLES DEL RECURSO", bg=tc, cols=COLS)
                 for col_n, h in enumerate(["NOMBRE DEL GRUPO", "FILTROS APLICADOS"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg=C["slate"])
-                hdr(ws.cell(row, 3, ""), "", bg=C["slate"])
-                hdr(ws.cell(row, 4, ""), "", bg=C["slate"])
-                hdr(ws.cell(row, 5, "USADO EN"), "USADO EN", bg=C["slate"])
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
+                hdr(ws.cell(row=row, column=3), "", bg=tc)
+                hdr(ws.cell(row=row, column=4), "", bg=tc)
+                hdr(ws.cell(row=row, column=5), "USADO EN", bg=tc)
                 ws.merge_cells(f'B{row}:D{row}')
                 ws.row_dimensions[row].height = 18
                 row += 1
@@ -679,25 +683,25 @@ def generar_excel(data, selected_ids):
                     else:
                         usage_text = "Sin uso en flujo activo"
                     n_lines = max(len(seg['rules']), len(usages) if usages else 1)
-                    c1 = ws.cell(row, 1, seg['name'])
-                    c2 = ws.cell(row, 2, "\n".join(seg['rules']))
-                    c3 = ws.cell(row, 3, "")
-                    c4 = ws.cell(row, 4, "")
-                    c5 = ws.cell(row, 5, usage_text)
-                    ws.merge_cells(f'B{row}:D{row}')
+                    c1 = ws.cell(row=row, column=1); c1.value = seg['name']
+                    c2 = ws.cell(row=row, column=2); c2.value = "\n".join(seg['rules'])
+                    c3 = ws.cell(row=row, column=3); c3.value = ""
+                    c4 = ws.cell(row=row, column=4); c4.value = ""
+                    c5 = ws.cell(row=row, column=5); c5.value = usage_text
                     for c in [c1, c2, c3, c4]:
                         sc(c, bg=bg, size=9, va='top', wrap=True)
                     sc(c5, bg=bg, size=9, va='top', wrap=True, color="16A34A" if usages else "64748B")
+                    ws.merge_cells(f'B{row}:D{row}')
                     ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
                 row += 1
 
             columns = sorted(res.get('columns') or [], key=lambda x: x.get('position', 0))
             if columns:
-                row = section_title(ws, row, "📋  CONFIGURACIÓN DE COLUMNAS", bg=C["blue"], cols=COLS)
+                row = section_title(ws, row, "📋  CONFIGURACIÓN DE COLUMNAS", bg=tc, cols=COLS)
                 for col_n, h in enumerate(["LABEL / NOMBRE", "TIPO DATO", "TIPO COL.", "LÓGICA · FÓRMULA · BUSCAR V"], 1):
-                    hdr(ws.cell(row, col_n, h), h, bg=C["blue"])
-                hdr(ws.cell(row, 5, ""), "", bg=C["blue"])
+                    hdr(ws.cell(row=row, column=col_n), h, bg=tc)
+                hdr(ws.cell(row=row, column=5), "", bg=tc)
                 ws.merge_cells(f'D{row}:E{row}')
                 ws.row_dimensions[row].height = 18
                 row += 1
@@ -707,14 +711,14 @@ def generar_excel(data, selected_ids):
                     col_type = (col.get('column_type') or '').replace('_', ' ').upper()
                     logic    = parse_transformation_logic(col, res_map, col_map)
                     bg       = C["grey"] if i % 2 == 0 else "FFFFFF"
-                    c1 = ws.cell(row, 1, label)
-                    c2 = ws.cell(row, 2, dtype)
-                    c3 = ws.cell(row, 3, col_type)
-                    c4 = ws.cell(row, 4, logic)
-                    c5 = ws.cell(row, 5, "")
-                    ws.merge_cells(f'D{row}:E{row}')
+                    c1 = ws.cell(row=row, column=1); c1.value = label
+                    c2 = ws.cell(row=row, column=2); c2.value = dtype
+                    c3 = ws.cell(row=row, column=3); c3.value = col_type
+                    c4 = ws.cell(row=row, column=4); c4.value = logic
+                    c5 = ws.cell(row=row, column=5); c5.value = ""
                     for c, al in [(c1,'left'),(c2,'center'),(c3,'center'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
+                    ws.merge_cells(f'D{row}:E{row}')
                     ws.row_dimensions[row].height = row_height(logic.count('\n') + 1)
                     row += 1
 
