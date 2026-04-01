@@ -10,13 +10,13 @@ from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", layout="wide")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONSTANTES
+# CONSTANTES (Paleta mejorada Premium "World-Class")
 # ══════════════════════════════════════════════════════════════════════════════
 C = {
-    "red":    "EA0050", "white": "FFFFFF", "grey":  "F5F5F5",
-    "dark":   "1C1C1C", "border":"D8D8D8", "blue":  "1565C0",
+    "red":    "EA0050", "white": "FFFFFF", "grey":  "F8FAFC", # Slate 50 para cebra sutil
+    "dark":   "1E293B", "border":"CBD5E1", "blue":  "1565C0", # Slate 800 para headers
     "teal":   "00695C", "amber": "E65100", "purple":"4A148C",
-    "green":  "1B5E20", "slate": "37474F", "rose":  "880E4F",
+    "green":  "1B5E20", "slate": "334155", "rose":  "880E4F", # Slate 700
 }
 
 RT_LABEL = {
@@ -95,11 +95,11 @@ def row_height(n_lines, base=13):
 # ══════════════════════════════════════════════════════════════════════════════
 def build_maps(data):
     """Construye mapas globales: res_map, col_map, seg_map, meta_map, seg_usage."""
-    res_map   = {}   # export_id → nombre del recurso
-    col_map   = {}   # export_id → label de columna
-    seg_map   = {}   # export_id → {name, resource, resource_id, rules}
-    meta_map  = {}   # export_id → valor del segmento (avanzadas)
-    seg_usage = {}   # seg export_id → [(resource_name, tipo_uso)]
+    res_map   = {}   
+    col_map   = {}   
+    seg_map   = {}   
+    meta_map  = {}   
+    seg_usage = {}   
 
     for r in data.get('resources', []):
         eid  = r.get('export_id')
@@ -203,14 +203,11 @@ def parse_transformation_logic(col, res_map, col_map):
         order_keys = uniq.get('order_keys', [])
         part_keys  = uniq.get('partition_keys', [])
 
-        # Tipo de columna de duplicado
         if dtype == 'boolean':
             lines.append("TIPO: Booleano de duplicado")
         elif dtype == 'integer':
             lines.append("TIPO: Numeracion de duplicado")
 
-        # Registro que se conserva
-        # ORDER BY (columna y dirección)
         if order_keys:
             order_parts = []
             for ok in sorted(order_keys, key=lambda x: x.get('position', 0)):
@@ -219,7 +216,6 @@ def parse_transformation_logic(col, res_map, col_map):
                 order_parts.append(f"{col_name} {direction}")
             lines.append("ORDER BY: " + ", ".join(order_parts))
 
-        # PARTITION BY (clave que define el duplicado)
         if part_keys:
             part_names = [col_map.get(pk.get('column_id'), f"ID:{pk.get('column_id')}")
                           for pk in part_keys]
@@ -437,7 +433,6 @@ def generar_excel(data, selected_ids):
     nodes                     = data.get('nodes', [])
     res_map, col_map, seg_map, meta_map, seg_usage = build_maps(data)
 
-    # Deduplicar + filtrar + ordenar (tipo → ID)
     seen, resources = set(), []
     for r in all_resources:
         eid = r.get('export_id')
@@ -476,6 +471,9 @@ def generar_excel(data, selected_ids):
         for i, h in enumerate(idx_hdrs, 1):
             hdr(ws.cell(4, i, h), h, bg=C["dark"])
         ws.row_dimensions[4].height = 20
+        
+        # INMOVILIZAR PANELES EN EL ÍNDICE
+        ws.freeze_panes = "A5"
 
         for row_n, res in enumerate(resources, 5):
             eid     = res.get('export_id')
@@ -520,6 +518,9 @@ def generar_excel(data, selected_ids):
                ha='left', va='center', wrap=False)
             ws.row_dimensions[row].height = 30
             row += 1
+            
+            # INMOVILIZAR PANELES EN DETALLE
+            ws.freeze_panes = "A2"
 
             row = meta_row(ws, row, "ID Recurso",  eid,  cols=COLS)
             row = meta_row(ws, row, "Tipo",        RT_LABEL.get(rt, rt), cols=COLS)
@@ -536,7 +537,6 @@ def generar_excel(data, selected_ids):
                 row = section_title(ws, row, "⚖️  REGLAS DE CONCILIACIÓN ESTÁNDAR",
                                     bg=C["red"], cols=COLS)
 
-                # Grupos conciliables activos (A y B)
                 row = section_title(ws, row, "  GRUPOS CONCILIABLES ACTIVOS",
                                     bg=C["rose"], cols=COLS)
                 for col_n, h in enumerate(
@@ -566,7 +566,6 @@ def generar_excel(data, selected_ids):
                                "Sí" if std['is_chained'] else "No", cols=COLS)
                 row += 1
 
-                # Rule sets
                 row = section_title(ws, row, "  RULE SETS DE MATCHING",
                                     bg="C62828", cols=COLS)
                 for col_n, h in enumerate(
@@ -595,7 +594,6 @@ def generar_excel(data, selected_ids):
                 row = section_title(ws, row, "🔬  REGLAS DE CONCILIACIÓN AVANZADA",
                                     bg=C["purple"], cols=COLS)
 
-                # Grupos conciliables + segmentos internos
                 row = section_title(ws, row, "  GRUPOS CONCILIABLES Y SEGMENTOS INTERNOS",
                                     bg="6A1B9A", cols=COLS)
                 for col_n, h in enumerate(
@@ -621,7 +619,6 @@ def generar_excel(data, selected_ids):
                     row += 1
                 row += 1
 
-                # Rule sets avanzados con segmentos resueltos
                 row = section_title(ws, row, "  RULE SETS (SEGMENTO A vs SEGMENTO B)",
                                     bg="4A148C", cols=COLS)
                 for col_n, h in enumerate(
@@ -639,7 +636,6 @@ def generar_excel(data, selected_ids):
                     if rs['new_ver']:
                         name_txt += "  ✦ new version"
 
-                    # Separar sweep por lado A y B
                     seg_a = next((s.replace("Lado A: ", "")
                                   for s in rs['sweep'] if s.startswith("Lado A")), "—")
                     seg_b = next((s.replace("Lado B: ", "")
@@ -721,7 +717,6 @@ def generar_excel(data, selected_ids):
                 row += 1
                 for i, seg in enumerate(segs_all):
                     bg = C["grey"] if i % 2 == 0 else "FFFFFF"
-                    # Resolve usage
                     usages = seg_usage.get(seg['seg_id'], [])
                     if usages:
                         usage_lines = [u[0] + " (" + u[1] + ")" for u in usages]
@@ -785,89 +780,97 @@ def generar_excel(data, selected_ids):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# STREAMLIT UI
+# STREAMLIT UI (CSS Premium)
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Custom CSS global — Roboto desde Google Fonts
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 
-/* ── DARK MODE BASE ── */
+/* ── DARK MODE PREMIUM (Slate/Zinc) ── */
 html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"],
 .stApp, .main, section[data-testid="stSidebar"] {
-    background-color: #18181B !important;
-    color: #E4E4E7 !important;
+    background-color: #0E1116 !important; /* Más profundo, estilo GitHub Dark */
+    color: #E2E8F0 !important;
 }
-[data-testid="stHeader"] { background-color: #18181B !important; }
-.block-container { background-color: #18181B !important; padding-top: 1.5rem !important; }
+[data-testid="stHeader"] { background-color: transparent !important; }
+.block-container { background-color: #0E1116 !important; padding-top: 1.5rem !important; }
 
 /* ── TIPOGRAFIA ── */
 html, body, [class*="css"], .stMarkdown, .stCaption,
 .stMetric, .stButton, .stDownloadButton,
 div[data-testid], p, span, label, h1, h2, h3, h4 {
     font-family: 'Roboto', sans-serif !important;
-    color: #E4E4E7 !important;
+    color: #E2E8F0 !important;
 }
 code, .font-mono { font-family: 'Roboto Mono', monospace !important; }
 
 /* ── METRIC CARDS ── */
-[data-testid="stMetric"] { background: #27272A !important; border-radius: 10px !important; padding: 12px !important; }
-[data-testid="stMetricLabel"] p { color: #A1A1AA !important; }
-[data-testid="stMetricValue"] { color: #F4F4F5 !important; }
+[data-testid="stMetric"] { 
+    background: #161A22 !important; 
+    border: 1px solid #2D3748 !important;
+    border-radius: 12px !important; 
+    padding: 16px !important; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+[data-testid="stMetricLabel"] p { color: #94A3B8 !important; font-weight: 500 !important; }
+[data-testid="stMetricValue"] { color: #F8FAFC !important; }
 
 /* ── SEPARADORES ── */
-hr { border-color: #3F3F46 !important; }
+hr { border-color: #1E293B !important; }
 
 /* ── FILE UPLOADER ── */
 div[data-testid="stFileUploader"] section {
-    border: 1.5px dashed #EA005077 !important;
-    border-radius: 10px !important;
-    background: #27272A !important;
+    border: 1.5px dashed #4A5568 !important;
+    border-radius: 12px !important;
+    background: #161A22 !important;
+    transition: all 0.2s ease;
 }
 div[data-testid="stFileUploader"] section:hover {
     border-color: #EA0050 !important;
-    background: #2D1A20 !important;
+    background: rgba(234, 0, 80, 0.05) !important;
 }
 div[data-testid="stFileUploader"] section button span { display: none !important; }
 div[data-testid="stFileUploader"] section button {
-    background: #3F3F46 !important;
-    color: #E4E4E7 !important;
-    border: none !important;
-    border-radius: 6px !important;
+    background: #2D3748 !important;
+    color: #F8FAFC !important;
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
+    padding: 4px 16px !important;
 }
 div[data-testid="stFileUploader"] section button::after {
     content: 'Buscar archivo';
     font-family: 'Roboto', sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #E4E4E7;
+    color: #F8FAFC;
 }
 div[data-testid="stFileUploader"] small,
-div[data-testid="stFileUploader"] p { color: #A1A1AA !important; }
+div[data-testid="stFileUploader"] p { color: #94A3B8 !important; }
 
 /* ── MULTISELECT ── */
 [data-testid="stMultiSelect"] > div > div {
-    background: #27272A !important;
-    border-color: #3F3F46 !important;
-    color: #E4E4E7 !important;
+    background: #161A22 !important;
+    border: 1px solid #2D3748 !important;
+    color: #E2E8F0 !important;
+    border-radius: 8px !important;
 }
-span[data-baseweb="tag"] { background: #3F3F46 !important; color: #E4E4E7 !important; }
+span[data-baseweb="tag"] { background: #2D3748 !important; color: #E2E8F0 !important; border-radius: 6px !important; }
 
 /* ── CHECKBOXES ── */
-[data-testid="stCheckbox"] label { color: #E4E4E7 !important; }
+[data-testid="stCheckbox"] label { color: #E2E8F0 !important; }
 
 /* ── PROGRESS BAR ── */
 .stProgress > div > div { background: #EA0050 !important; }
-.stProgress > div { background: #3F3F46 !important; }
+.stProgress > div { background: #1E293B !important; }
 
 /* ── SUCCESS / ERROR / WARNING ── */
-[data-testid="stAlert"] { background: #27272A !important; border-color: #3F3F46 !important; }
-div[data-testid="stSuccess"] { background: #14261A !important; border-color: #166534 !important; }
-div[data-testid="stError"]   { background: #2D1A1A !important; border-color: #991B1B !important; }
+[data-testid="stAlert"] { background: #161A22 !important; border: 1px solid #2D3748 !important; border-radius: 12px !important; }
+div[data-testid="stSuccess"] { background: rgba(20, 38, 26, 0.6) !important; border-color: #166534 !important; }
+div[data-testid="stError"]   { background: rgba(45, 26, 26, 0.6) !important; border-color: #991B1B !important; }
 
 /* ── CAPTIONS ── */
-.stCaption, [data-testid="stCaptionContainer"] p { color: #71717A !important; }
+.stCaption, [data-testid="stCaptionContainer"] p { color: #64748B !important; }
 
 /* ── BOTÓN PRIMARY ── */
 div[data-testid="stButton"] button[kind="primary"] {
@@ -877,34 +880,43 @@ div[data-testid="stButton"] button[kind="primary"] {
     font-weight: 500 !important;
     font-family: 'Roboto', sans-serif !important;
     color: #fff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(234, 0, 80, 0.25) !important;
+    transition: all 0.2s ease;
 }
-div[data-testid="stButton"] button[kind="primary"]:hover { background: #C0003A !important; }
+div[data-testid="stButton"] button[kind="primary"]:hover { 
+    background: #C0003A !important; 
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(234, 0, 80, 0.3) !important;
+}
 div[data-testid="stDownloadButton"] button {
     font-family: 'Roboto', sans-serif !important;
     background: #EA0050 !important;
     color: #fff !important;
     border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(234, 0, 80, 0.25) !important;
 }
 div[data-testid="stDownloadButton"] button:hover { background: #C0003A !important; }
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #27272A; }
-::-webkit-scrollbar-thumb { background: #52525B; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #71717A; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0E1116; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; border: 2px solid #0E1116; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
 </style>
 """, unsafe_allow_html=True)
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='background:#EA0050;padding:22px 32px;border-radius:14px;
-    box-shadow:0 4px 20px rgba(234,0,80,0.18);margin-bottom:20px'>
+<div style='background: linear-gradient(135deg, #EA0050 0%, #B8003F 100%); padding:24px 32px;border-radius:16px;
+    box-shadow: 0 10px 25px -5px rgba(234,0,80,0.3);margin-bottom:24px;border: 1px solid rgba(255,255,255,0.1)'>
     <div style='color:white;font-family:Roboto,Arial,sans-serif;
-        font-size:1.6rem;font-weight:700;letter-spacing:-0.4px'>
+        font-size:1.75rem;font-weight:700;letter-spacing:-0.5px'>
         Simetrik Documentation
     </div>
-    <div style='color:rgba(255,255,255,0.78);font-family:Roboto,Arial,sans-serif;
-        font-size:0.88rem;margin-top:4px'>
+    <div style='color:rgba(255,255,255,0.85);font-family:Roboto,Arial,sans-serif;
+        font-size:0.95rem;margin-top:6px; font-weight: 300;'>
         PedidosYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
     </div>
 </div>""", unsafe_allow_html=True)
@@ -919,13 +931,13 @@ up = st.file_uploader(
 
 if not up:
     st.markdown("""
-    <div style='background:#27272A;border:2px dashed #EA005055;border-radius:12px;
-        padding:32px;text-align:center;margin-top:8px'>
-        <div style='font-size:2rem;margin-bottom:8px'>📂</div>
-        <p style='color:#A1A1AA;font-size:0.95rem;margin:0'>
+    <div style='background:#161A22;border:1px solid #2D3748;border-radius:12px;
+        padding:40px 32px;text-align:center;margin-top:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.2)'>
+        <div style='font-size:2.5rem;margin-bottom:12px'>📂</div>
+        <p style='color:#E2E8F0;font-size:1.05rem;font-weight:500;margin:0'>
             Arrastra el JSON aquí o usa el botón para seleccionarlo
         </p>
-        <p style='color:#71717A;font-size:0.8rem;margin:6px 0 0'>
+        <p style='color:#64748B;font-size:0.85rem;margin:8px 0 0'>
             En Simetrik: Flujo → Configuracion → Exportar JSON
         </p>
     </div>""", unsafe_allow_html=True)
@@ -951,7 +963,6 @@ res_map, col_map, seg_map, meta_map, seg_usage = build_maps(data)
 resources_unique.sort(key=sort_key)
 rels_all = build_relations(resources_unique, nodes, res_map)
 
-# Resumen del flujo cargado — conteo por tipo
 _type_counts = {}
 for r in resources_unique:
     rt = r.get('resource_type', '')
@@ -968,44 +979,42 @@ _nombre_display = up.name if len(up.name) <= 30 else up.name[:27] + "…"
 
 def _metric_card(label, value, color="#EA0050"):
     return (
-        "<div style='background:#27272A;border:1px solid #3F3F46;border-radius:10px;"
-        "padding:12px 16px;text-align:center'>"
-        "<div style='font-size:0.72rem;color:#A1A1AA;font-family:Roboto,sans-serif;"
-        "margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px'>" + label + "</div>"
-        "<div style='font-size:1.6rem;font-weight:700;color:" + color + ";font-family:Roboto,sans-serif;line-height:1'>"
+        "<div style='background:#161A22;border:1px solid #2D3748;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.1);"
+        "padding:16px;text-align:center'>"
+        "<div style='font-size:0.75rem;color:#94A3B8;font-family:Roboto,sans-serif;font-weight:600;"
+        "margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px'>" + label + "</div>"
+        "<div style='font-size:1.75rem;font-weight:700;color:" + color + ";font-family:Roboto,sans-serif;line-height:1'>"
         + str(value) + "</div></div>"
     )
 
 _cards_html = (
-    "<div style='display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px'>"
-    + _metric_card("Total", _total, "#1a1a1a")
+    "<div style='display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:8px'>"
+    + _metric_card("Total", _total, "#E2E8F0")
     + _metric_card("Fuentes", _fuentes, RT_COLOR['native'])
     + _metric_card("Uniones", _uniones, RT_COLOR['source_union'])
     + _metric_card("Agrupaciones", _agrupaciones, RT_COLOR['source_group'])
     + _metric_card("Conc. Std", _recons_std, RT_COLOR['reconciliation'])
     + _metric_card("Conc. Avz", _recons_adv, RT_COLOR['advanced_reconciliation'])
-    + ("<div style='background:#27272A;border:1px solid #3F3F46;border-radius:10px;"
-       "padding:12px 16px;text-align:left'>"
-       "<div style='font-size:0.72rem;color:#A1A1AA;font-family:Roboto,sans-serif;"
-       "margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px'>JSON cargado</div>"
-       "<div style='font-size:0.82rem;font-weight:600;color:#E4E4E7;font-family:Roboto,sans-serif;"
-       "word-break:break-all;line-height:1.3'>" + _nombre_display + "</div></div>")
+    + ("<div style='background:#161A22;border:1px solid #2D3748;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.1);"
+       "padding:16px;text-align:left;display:flex;flex-direction:column;justify-content:center'>"
+       "<div style='font-size:0.75rem;color:#94A3B8;font-family:Roboto,sans-serif;font-weight:600;"
+       "margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px'>JSON cargado</div>"
+       "<div style='font-size:0.85rem;font-weight:500;color:#E2E8F0;font-family:Roboto,sans-serif;"
+       "word-break:break-all;line-height:1.4'>" + _nombre_display + "</div></div>")
     + "</div>"
 )
 st.markdown(_cards_html, unsafe_allow_html=True)
 
-st.markdown("<hr style='margin:16px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:24px 0;border-color:#1E293B'>", unsafe_allow_html=True)
 
 # ── PASO 1: SELECCIÓN ─────────────────────────────────────────────────────────
 st.markdown("### 1️⃣ &nbsp; Selecciona los recursos a documentar")
 
-# Filtro por tipo — pills horizontales
 all_types = sorted({r.get('resource_type', '') for r in resources_unique},
                    key=lambda x: RT_ORDER.get(x, 99))
 
 col_f1, col_f2 = st.columns([4, 1])
 with col_f1:
-    # Mostrar los tipos con su label completo en el multiselect
     filtro_tipo = st.multiselect(
         "Filtrar por tipo de recurso",
         options=all_types,
@@ -1018,7 +1027,6 @@ with col_f1:
 resources_visible = [r for r in resources_unique
                      if r.get('resource_type', '') in filtro_tipo]
 
-# Botones Todos / Ninguno + contador
 bc1, bc2, bc3 = st.columns([1, 1, 6])
 select_all   = bc1.button("✅ Todos", use_container_width=True)
 deselect_all = bc2.button("☐ Ninguno", use_container_width=True)
@@ -1044,13 +1052,12 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
     color  = RT_COLOR.get(rt, C["dark"])
     label  = RT_LABEL.get(rt, rt)
 
-    # Encabezado de grupo con badge
     st.markdown(
-        f"<div style='display:flex;align-items:center;gap:10px;margin:14px 0 6px'>"
+        f"<div style='display:flex;align-items:center;gap:12px;margin:20px 0 10px'>"
         f"<span style='background:#{color};color:white;padding:4px 14px;"
-        f"border-radius:20px;font-size:0.8rem;font-weight:700;white-space:nowrap'>"
+        f"border-radius:20px;font-size:0.8rem;font-weight:600;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.2)'>"
         f"{label}</span>"
-        f"<span style='color:#aaa;font-size:0.8rem'>{len(group)} recursos</span>"
+        f"<span style='color:#64748B;font-size:0.85rem;font-weight:500'>{len(group)} recursos</span>"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -1065,13 +1072,14 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
         checked = ca.checkbox("", value=st.session_state.sel.get(eid, True), key=f"chk_{eid}")
         st.session_state.sel[eid] = checked
 
-        opacity = "1" if checked else "0.45"
+        opacity = "1" if checked else "0.4"
         cb.markdown(
-            f"<div style='opacity:{opacity};padding:5px 0'>"
-            f"<span style='font-weight:600;font-size:0.9rem;color:#1a1a1a'>{name}</span>"
-            f"&nbsp;&nbsp;<span style='font-size:0.75rem;color:#999;font-family:monospace'>{eid}</span><br>"
-            f"<span style='font-size:0.75rem;color:#A1A1AA'>⬅️ {pars[:80]}{'…' if len(pars)>80 else ''}"
-            f"&nbsp;&nbsp;➡️ {chils[:80]}{'…' if len(chils)>80 else ''}</span>"
+            f"<div style='opacity:{opacity};padding:6px 12px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:4px;border:1px solid transparent;transition:all 0.2s;'>"
+            f"<span style='font-weight:500;font-size:0.95rem;color:#E2E8F0'>{name}</span>"
+            f"&nbsp;&nbsp;<span style='font-size:0.75rem;color:#64748B;font-family:monospace;background:#1E293B;padding:2px 6px;border-radius:4px'>{eid}</span><br>"
+            f"<span style='font-size:0.8rem;color:#94A3B8;margin-top:4px;display:inline-block'>"
+            f"⬅️ <span style='color:#CBD5E1'>{pars[:80]}{'…' if len(pars)>80 else ''}</span>"
+            f"&nbsp;&nbsp;&nbsp;➡️ <span style='color:#CBD5E1'>{chils[:80]}{'…' if len(chils)>80 else ''}</span></span>"
             f"</div>",
             unsafe_allow_html=True
         )
@@ -1079,12 +1087,10 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
             selected_ids.add(eid)
 
 # ── PASO 2: GENERAR ───────────────────────────────────────────────────────────
-st.markdown("<hr style='margin:20px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:32px 0 24px;border-color:#1E293B'>", unsafe_allow_html=True)
 
 n_sel = len(selected_ids)
 
-# Panel de resumen de selección — construido con concatenación para evitar
-# conflictos de comillas en f-strings anidados
 if n_sel > 0:
     tipos_sel = {}
     for r in resources_unique:
@@ -1097,18 +1103,18 @@ if n_sel > 0:
         color = RT_COLOR.get(rt, "444444")
         label = RT_LABEL.get(rt, rt)
         badges_html += (
-            "<span style='background:#" + color + ";color:white;"
-            "padding:3px 12px;border-radius:12px;font-size:0.78rem;"
-            "font-weight:700;white-space:nowrap'>"
+            "<span style='background:#" + color + "33;color:#" + color + ";border:1px solid #" + color + "66;"
+            "padding:4px 12px;border-radius:12px;font-size:0.8rem;"
+            "font-weight:600;white-space:nowrap'>"
             + label + " (" + str(cnt) + ")"
             "</span> "
         )
 
     sel_label = "seleccionados" if n_sel != 1 else "seleccionado"
     resumen_html = (
-        "<div style='background:#27272A;border-radius:10px;padding:12px 16px;"
-        "margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap'>"
-        "<span style='font-weight:700;color:#E4E4E7;white-space:nowrap'>📋 "
+        "<div style='background:#161A22;border:1px solid #2D3748;border-radius:12px;padding:16px 20px;"
+        "margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.15)'>"
+        "<span style='font-weight:600;color:#E2E8F0;white-space:nowrap;font-size:1.05rem'>📋 "
         + str(n_sel) + " " + sel_label + ":</span>"
         + badges_html
         + "</div>"
@@ -1140,7 +1146,7 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 @keyframes popin2{0%{transform:translate(-50%,-50%) scale(0);opacity:0}65%{transform:translate(-50%,-50%) scale(1.1);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @keyframes fadein2{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes overlay-fade{0%{opacity:1}78%{opacity:1}100%{opacity:0;pointer-events:none}}
-.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(18,18,18,0.93);animation:overlay-fade 4.4s ease .1s both;pointer-events:none}
+.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(14,17,22,0.95);animation:overlay-fade 4.4s ease .1s both;pointer-events:none;backdrop-filter:blur(4px)}
 .py-road-svg{position:absolute;bottom:0;left:0;width:100%;height:32px}
 .py-road-line{animation:road-anim .35s linear infinite}
 .py-m1{position:absolute;bottom:32px;animation:ride1 3.4s cubic-bezier(.2,.8,.4,1) 0.0s both}
@@ -1148,32 +1154,32 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 .py-m3{position:absolute;bottom:24px;animation:ride3 3.4s cubic-bezier(.2,.8,.4,1) 1.0s both}
 .py-w{transform-origin:50% 50%;animation:wspin .22s linear infinite}
 .py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:70px;height:4px;background:linear-gradient(90deg,transparent,#EA005055);border-radius:2px}
-.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both}
-.py-msg2{position:absolute;top:calc(50% + 75px);left:50%;font-family:Roboto,system-ui,sans-serif;font-size:1.3rem;font-weight:600;color:#ffffff;background:#EA0050;padding:10px 34px;border-radius:28px;border:none;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.2px}
+.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both;box-shadow:0 10px 30px rgba(234,0,80,0.4)}
+.py-msg2{position:absolute;top:calc(50% + 85px);left:50%;font-family:Roboto,system-ui,sans-serif;font-size:1.3rem;font-weight:500;color:#ffffff;background:#161A22;padding:12px 36px;border-radius:30px;border:1px solid #2D3748;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.2px;box-shadow:0 4px 15px rgba(0,0,0,0.5)}
 </style>
 <div class="py-overlay">
   <svg class="py-road-svg">
-    <rect width="100%" height="32" fill="#1a1a1a"/>
-    <line x1="0" y1="8" x2="100%" y2="8" stroke="#333" stroke-width="1"/>
-    <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".3"/>
-    <line x1="0" y1="31" x2="100%" y2="31" stroke="#333" stroke-width="1"/>
+    <rect width="100%" height="32" fill="#0E1116"/>
+    <line x1="0" y1="8" x2="100%" y2="8" stroke="#1E293B" stroke-width="1"/>
+    <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".4"/>
+    <line x1="0" y1="31" x2="100%" y2="31" stroke="#1E293B" stroke-width="1"/>
   </svg>
   <div class="py-m1"><div style="position:relative"><div class="py-trail"></div>
     <svg width="130" height="68" viewBox="0 0 110 58">
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".75"/>
-      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#333"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#1E293B"/>
       <ellipse cx="36" cy="13" rx="10" ry="7" fill="#111"/>
       <ellipse cx="39" cy="14" rx="4" ry="3" fill="#EA0050"/>
       <rect x="30" y="19" width="16" height="9" rx="3" fill="#111"/>
       <rect x="22" y="18" width="16" height="14" rx="2" fill="#EA0050" stroke="#fff" stroke-width="1.2"/>
       <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
-      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
-      <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
-      <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
-      <g transform="translate(85,43)"><circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#666" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#666" stroke-width="1"/></g><circle r="3" fill="#EA0050"/></g>
-      <g transform="translate(20,43)"><circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#666" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#666" stroke-width="1"/></g><circle r="3.5" fill="#EA0050"/></g>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#94A3B8"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#475569" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#475569" stroke-width="2"/>
+      <g transform="translate(85,43)"><circle r="11" fill="#0E1116"/><circle r="8" fill="#1E293B"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#64748B" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#64748B" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#475569" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#475569" stroke-width="1"/></g><circle r="3" fill="#EA0050"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#0E1116"/><circle r="9" fill="#1E293B"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#64748B" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#64748B" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#475569" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#475569" stroke-width="1"/></g><circle r="3.5" fill="#EA0050"/></g>
     </svg>
   </div></div>
   <div class="py-m2"><div style="position:relative"><div class="py-trail"></div>
@@ -1181,17 +1187,17 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#C0003A"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#A00030"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
-      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#333"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#1E293B"/>
       <ellipse cx="36" cy="13" rx="10" ry="7" fill="#EA0050"/>
       <ellipse cx="39" cy="14" rx="4" ry="3" fill="#fff" opacity=".6"/>
       <rect x="30" y="19" width="16" height="9" rx="3" fill="#EA0050"/>
       <rect x="22" y="18" width="16" height="14" rx="2" fill="#C0003A" stroke="#fff" stroke-width="1.2"/>
       <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
-      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
-      <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
-      <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
-      <g transform="translate(85,43)"><circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3" fill="#C0003A"/></g>
-      <g transform="translate(20,43)"><circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3.5" fill="#C0003A"/></g>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#94A3B8"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#475569" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#475569" stroke-width="2"/>
+      <g transform="translate(85,43)"><circle r="11" fill="#0E1116"/><circle r="8" fill="#1E293B"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#64748B" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#64748B" stroke-width="1.5"/></g><circle r="3" fill="#C0003A"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#0E1116"/><circle r="9" fill="#1E293B"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#64748B" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#64748B" stroke-width="1.5"/></g><circle r="3.5" fill="#C0003A"/></g>
     </svg>
   </div></div>
   <div class="py-m3"><div style="position:relative"><div class="py-trail"></div>
@@ -1199,17 +1205,17 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
-      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#333"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#1E293B"/>
       <ellipse cx="36" cy="13" rx="10" ry="7" fill="#222"/>
       <ellipse cx="39" cy="14" rx="4" ry="3" fill="#EA0050"/>
       <rect x="30" y="19" width="16" height="9" rx="3" fill="#222"/>
       <rect x="22" y="18" width="16" height="14" rx="2" fill="#EA0050" stroke="#fff" stroke-width="1.2"/>
       <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
-      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#999"/>
-      <line x1="76" y1="29" x2="85" y2="42" stroke="#444" stroke-width="2"/>
-      <line x1="29" y1="30" x2="20" y2="42" stroke="#444" stroke-width="2"/>
-      <g transform="translate(85,43)"><circle r="11" fill="#1a1a1a"/><circle r="8" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#777" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3" fill="#EA0050"/></g>
-      <g transform="translate(20,43)"><circle r="12" fill="#1a1a1a"/><circle r="9" fill="#2a2a2a"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#777" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#777" stroke-width="1.5"/></g><circle r="3.5" fill="#EA0050"/></g>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#94A3B8"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#475569" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#475569" stroke-width="2"/>
+      <g transform="translate(85,43)"><circle r="11" fill="#0E1116"/><circle r="8" fill="#1E293B"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#64748B" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#64748B" stroke-width="1.5"/></g><circle r="3" fill="#EA0050"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#0E1116"/><circle r="9" fill="#1E293B"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#64748B" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#64748B" stroke-width="1.5"/></g><circle r="3.5" fill="#EA0050"/></g>
     </svg>
   </div></div>
   <div class="py-check2">
@@ -1234,5 +1240,5 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         import traceback
         st.code(traceback.format_exc())
 
-st.markdown("<hr style='margin:24px 0;border-color:#f0f0f0'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:28px 0;border-color:#1E293B'>", unsafe_allow_html=True)
 st.caption("Simetrik Documentation · PeYa Finance Operations & Payments · v2.2 · Jef")
