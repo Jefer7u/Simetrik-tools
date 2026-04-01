@@ -10,13 +10,13 @@ from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", layout="wide")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONSTANTES (Paleta Excel Premium World-Class)
+# CONSTANTES (Paleta Excel Claro Corporativo PeYa)
 # ══════════════════════════════════════════════════════════════════════════════
 C = {
-    "red":    "EA0050", "white": "FFFFFF", "grey":  "F8FAFC", # Slate 50 (Fondo cebra)
-    "dark":   "0F172A", "border":"E2E8F0", "blue":  "1D4ED8", # Slate 900 (Headers), Slate 200 (Bordes)
-    "teal":   "0F766E", "amber": "D97706", "purple":"6D28D9",
-    "green":  "15803D", "slate": "334155", "rose":  "BE123C", 
+    "red":    "EA0050", "white": "FFFFFF", "grey":  "F9FAFB", # Zebra súper sutil
+    "dark":   "2B2B2B", "border":"E5E7EB", "blue":  "2563EB", # Gris oscuro corporativo
+    "teal":   "0D9488", "amber": "D97706", "purple":"7C3AED",
+    "green":  "16A34A", "slate": "475569", "rose":  "E11D48", 
 }
 
 RT_LABEL = {
@@ -30,15 +30,16 @@ RT_LABEL = {
     "cumulative_balance":      "📈 Balance Acumulado",
 }
 
+# Colores vivos para modo claro
 RT_COLOR = {
-    "native":                  "3B82F6", # Blue 500
-    "source_union":            "14B8A6", # Teal 500
-    "source_group":            "F59E0B", # Amber 500
+    "native":                  "3B82F6", 
+    "source_union":            "0D9488", 
+    "source_group":            "D97706", 
     "reconciliation":          "EA0050", # PeYa Red
-    "advanced_reconciliation": "8B5CF6", # Violet 500
-    "consolidation":           "64748B", # Slate 500
-    "resource_join":           "22C55E", # Green 500
-    "cumulative_balance":      "22C55E", # Green 500
+    "advanced_reconciliation": "7C3AED", 
+    "consolidation":           "475569", 
+    "resource_join":           "16A34A", 
+    "cumulative_balance":      "16A34A", 
 }
 
 # Orden de tipos para sorting
@@ -667,7 +668,7 @@ def generar_excel(data, selected_ids):
                     c3 = ws.cell(row, 5, usage_text)
                     sc(c1, bg=bg, size=9, va='top', wrap=True)
                     sc(c2, bg=bg, size=9, va='top', wrap=True)
-                    sc(c3, bg=bg, size=9, va='top', wrap=True, color="15803D" if usages else "64748B")
+                    sc(c3, bg=bg, size=9, va='top', wrap=True, color="16A34A" if usages else "64748B")
                     ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
                 row += 1
@@ -710,77 +711,79 @@ def generar_excel(data, selected_ids):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# STREAMLIT UI (CSS Premium Shadcn/Linear)
+# STREAMLIT UI (CSS Premium Light Mode PeYa)
 # ══════════════════════════════════════════════════════════════════════════════
 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ── DARK MODE PREMIUM (Zincs) ── */
+/* ── LIGHT MODE PREMIUM PeYa ── */
 html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"],
 .stApp, .main, section[data-testid="stSidebar"] {
-    background-color: #09090B !important; /* Zinc 950 - Vercel Dark */
-    color: #FAFAFA !important; /* Zinc 50 */
+    background-color: #F4F5F7 !important; /* Gris ultra claro para descanso visual */
+    color: #1A1A1A !important;
 }
 [data-testid="stHeader"] { background-color: transparent !important; }
-.block-container { background-color: #09090B !important; padding-top: 1.5rem !important; }
+.block-container { background-color: #F4F5F7 !important; padding-top: 1.5rem !important; }
 
 /* ── TIPOGRAFIA ── */
 html, body, [class*="css"], .stMarkdown, .stCaption,
 .stMetric, .stButton, .stDownloadButton,
 div[data-testid], p, span, label, h1, h2, h3, h4 {
     font-family: 'Inter', sans-serif !important;
-    color: #FAFAFA !important;
+    color: #1A1A1A !important;
 }
-code, .font-mono { font-family: 'JetBrains Mono', monospace !important; }
+code, .font-mono { font-family: 'JetBrains Mono', monospace !important; color: #EA0050 !important; background: #FEF2F2 !important; }
 
 /* ── CHECKBOXES ── */
-[data-testid="stCheckbox"] label { color: #FAFAFA !important; }
+[data-testid="stCheckbox"] label { color: #1A1A1A !important; }
 [data-testid="stCheckbox"] > div { align-items: center; justify-content: center; height: 100%; margin-top: 25px;}
 
 /* ── FILE UPLOADER ── */
 div[data-testid="stFileUploader"] section {
-    border: 1px dashed #27272A !important;
+    border: 2px dashed #E5E7EB !important;
     border-radius: 12px !important;
-    background: #18181B !important;
+    background: #FFFFFF !important;
     transition: all 0.2s ease;
 }
 div[data-testid="stFileUploader"] section:hover {
     border-color: #EA0050 !important;
-    background: #18181B !important;
+    background: #FFF1F2 !important;
 }
 div[data-testid="stFileUploader"] section button span { display: none !important; }
 div[data-testid="stFileUploader"] section button {
-    background: #27272A !important;
-    color: #FAFAFA !important;
-    border: 1px solid #3F3F46 !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
+    border: 1px solid #D1D5DB !important;
     border-radius: 8px !important;
     padding: 6px 16px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
 }
 div[data-testid="stFileUploader"] section button::after {
     content: 'Examinar archivos';
     font-family: 'Inter', sans-serif;
     font-size: 0.875rem;
-    font-weight: 500;
-    color: #FAFAFA;
+    font-weight: 600;
+    color: #1A1A1A;
 }
 div[data-testid="stFileUploader"] small,
-div[data-testid="stFileUploader"] p { color: #A1A1AA !important; }
+div[data-testid="stFileUploader"] p { color: #6B7280 !important; }
 
 /* ── MULTISELECT ── */
 [data-testid="stMultiSelect"] > div > div {
-    background: #18181B !important;
-    border: 1px solid #27272A !important;
-    color: #FAFAFA !important;
+    background: #FFFFFF !important;
+    border: 1px solid #D1D5DB !important;
+    color: #1A1A1A !important;
     border-radius: 8px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
 }
-span[data-baseweb="tag"] { background: #27272A !important; color: #FAFAFA !important; border-radius: 6px !important; border: 1px solid #3F3F46 !important;}
+span[data-baseweb="tag"] { background: #F3F4F6 !important; color: #1A1A1A !important; border-radius: 6px !important; border: 1px solid #E5E7EB !important;}
 
 /* ── PROGRESS BAR ── */
 .stProgress > div > div { background: #EA0050 !important; }
-.stProgress > div { background: #27272A !important; }
+.stProgress > div { background: #E5E7EB !important; }
 
 /* ── BOTÓN PRIMARY ── */
 div[data-testid="stButton"] button[kind="primary"] {
@@ -806,25 +809,26 @@ div[data-testid="stDownloadButton"] button {
     border: 1px solid #C0003A !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(234, 0, 80, 0.2) !important;
 }
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #09090B; }
-::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
+::-webkit-scrollbar-track { background: #F4F5F7; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 </style>
 """, unsafe_allow_html=True)
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='background: #18181B; padding:24px 32px;border-radius:12px;
-    border: 1px solid #27272A; border-top: 4px solid #EA0050; margin-bottom:32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1)'>
-    <div style='color:#FAFAFA;font-family:Inter,sans-serif;
-        font-size:1.6rem;font-weight:700;letter-spacing:-0.5px'>
+<div style='background: linear-gradient(135deg, #EA0050 0%, #C0003A 100%); padding:28px 32px;border-radius:12px;
+    margin-bottom:32px; box-shadow: 0 8px 20px -5px rgba(234,0,80,0.3)'>
+    <div style='color:#FFFFFF;font-family:Inter,sans-serif;
+        font-size:1.75rem;font-weight:700;letter-spacing:-0.5px'>
         Simetrik Documentation
     </div>
-    <div style='color:#A1A1AA;font-family:Inter,sans-serif;
+    <div style='color:rgba(255,255,255,0.9);font-family:Inter,sans-serif;
         font-size:0.95rem;margin-top:6px; font-weight: 500;'>
         PedidosYa Finance Operations &amp; Payments &nbsp;·&nbsp; v2.2 · Jef
     </div>
@@ -840,13 +844,13 @@ up = st.file_uploader(
 
 if not up:
     st.markdown("""
-    <div style='background:#18181B;border:1px dashed #3F3F46;border-radius:12px;
-        padding:48px 32px;text-align:center;margin-top:16px;'>
+    <div style='background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;
+        padding:48px 32px;text-align:center;margin-top:16px;box-shadow: 0 2px 4px rgba(0,0,0,0.02)'>
         <div style='font-size:2.5rem;margin-bottom:12px'>📂</div>
-        <p style='color:#FAFAFA;font-size:1.05rem;font-weight:600;margin:0'>
+        <p style='color:#1A1A1A;font-size:1.1rem;font-weight:600;margin:0'>
             Arrastra el JSON aquí o usa el botón para seleccionarlo
         </p>
-        <p style='color:#71717A;font-size:0.85rem;margin:8px 0 0'>
+        <p style='color:#6B7280;font-size:0.9rem;margin:8px 0 0'>
             En Simetrik: Flujo → Configuracion → Exportar JSON
         </p>
     </div>""", unsafe_allow_html=True)
@@ -886,38 +890,38 @@ _recons_adv     = _type_counts.get('advanced_reconciliation', 0)
 _recons_total   = _recons_std + _recons_adv
 _nombre_display = up.name if len(up.name) <= 30 else up.name[:27] + "…"
 
-def _metric_card(label, value, color="#EA0050"):
+def _metric_card(label, value, color="#EA0050", bg_color="#FFFFFF"):
     return (
-        "<div style='background:#18181B;border:1px solid #27272A;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05);"
+        "<div style='background:" + bg_color + ";border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.04);"
         "padding:16px;text-align:center'>"
-        "<div style='font-size:0.72rem;color:#A1A1AA;font-family:Inter,sans-serif;font-weight:600;"
+        "<div style='font-size:0.75rem;color:#6B7280;font-family:Inter,sans-serif;font-weight:600;"
         "margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px'>" + label + "</div>"
-        "<div style='font-size:1.6rem;font-weight:700;color:" + color + ";font-family:Inter,sans-serif;line-height:1'>"
+        "<div style='font-size:1.75rem;font-weight:700;color:" + color + ";font-family:Inter,sans-serif;line-height:1'>"
         + str(value) + "</div></div>"
     )
 
 _cards_html = (
     "<div style='display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:8px'>"
-    + _metric_card("Total", _total, "#FAFAFA")
+    + _metric_card("Total", _total, "#1A1A1A", "#F9FAFB")
     + _metric_card("Fuentes", _fuentes, f"#{RT_COLOR['native']}")
     + _metric_card("Uniones", _uniones, f"#{RT_COLOR['source_union']}")
     + _metric_card("Agrupaciones", _agrupaciones, f"#{RT_COLOR['source_group']}")
     + _metric_card("Conc. Std", _recons_std, f"#{RT_COLOR['reconciliation']}")
     + _metric_card("Conc. Avz", _recons_adv, f"#{RT_COLOR['advanced_reconciliation']}")
-    + ("<div style='background:#18181B;border:1px solid #27272A;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05);"
+    + ("<div style='background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.04);"
        "padding:16px;text-align:left;display:flex;flex-direction:column;justify-content:center'>"
-       "<div style='font-size:0.72rem;color:#A1A1AA;font-family:Inter,sans-serif;font-weight:600;"
+       "<div style='font-size:0.75rem;color:#6B7280;font-family:Inter,sans-serif;font-weight:600;"
        "margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px'>JSON cargado</div>"
-       "<div style='font-size:0.85rem;font-weight:600;color:#FAFAFA;font-family:Inter,sans-serif;"
+       "<div style='font-size:0.85rem;font-weight:600;color:#1A1A1A;font-family:Inter,sans-serif;"
        "word-break:break-all;line-height:1.4'>" + _nombre_display + "</div></div>")
     + "</div>"
 )
 st.markdown(_cards_html, unsafe_allow_html=True)
 
-st.markdown("<hr style='margin:24px 0;border-color:#27272A'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:28px 0;border-color:#E5E7EB'>", unsafe_allow_html=True)
 
 # ── PASO 1: SELECCIÓN ─────────────────────────────────────────────────────────
-st.markdown("<h3 style='margin-bottom:16px; font-weight: 600'>1️⃣ &nbsp; Selecciona los recursos a documentar</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='margin-bottom:16px; font-weight: 700; color: #1A1A1A;'>1️⃣ &nbsp; Selecciona los recursos a documentar</h3>", unsafe_allow_html=True)
 
 all_types = sorted({r.get('resource_type', '') for r in resources_unique},
                    key=lambda x: RT_ORDER.get(x, 99))
@@ -958,15 +962,15 @@ for r in resources_visible:
 selected_ids = set()
 for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
     group = tipo_groups[rt]
-    color_hex  = RT_COLOR.get(rt, "4B5563")
+    color_hex  = RT_COLOR.get(rt, "475569")
     label  = RT_LABEL.get(rt, rt)
 
     st.markdown(
-        f"<div style='display:flex;align-items:center;gap:12px;margin:32px 0 12px'>"
-        f"<span style='background:#{color_hex}22;color:#{color_hex};border: 1px solid #{color_hex}44;padding:6px 14px;"
-        f"border-radius:20px;font-size:0.8rem;font-weight:700;white-space:nowrap;'>"
+        f"<div style='display:flex;align-items:center;gap:12px;margin:36px 0 16px'>"
+        f"<span style='background:#{color_hex}15;color:#{color_hex};border: 1px solid #{color_hex}40;padding:6px 14px;"
+        f"border-radius:20px;font-size:0.85rem;font-weight:700;white-space:nowrap;'>"
         f"{label}</span>"
-        f"<span style='color:#71717A;font-size:0.85rem;font-weight:600'>{len(group)} recursos</span>"
+        f"<span style='color:#6B7280;font-size:0.85rem;font-weight:600'>{len(group)} recursos</span>"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -981,21 +985,22 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
         checked = ca.checkbox("", value=st.session_state.sel.get(eid, True), key=f"chk_{eid}")
         st.session_state.sel[eid] = checked
         
-        # Tarjeta "World-Class" para la lista de recursos
-        opacity = "1" if checked else "0.5"
-        bg_color = "#18181B" if checked else "#09090B"
-        border_color = "#EA005088" if checked else "#27272A"
-        box_shadow = "0 4px 12px rgba(0,0,0,0.15)" if checked else "none"
+        # Tarjeta "World-Class" Modo Claro PeYa
+        opacity = "1" if checked else "0.55"
+        bg_color = "#FFFFFF" if checked else "#F9FAFB"
+        border_color = "#EA0050" if checked else "#E5E7EB"
+        border_width = "2px" if checked else "1px"
+        box_shadow = "0 4px 12px rgba(0,0,0,0.06)" if checked else "none"
 
         cb.markdown(
-            f"<div style='opacity:{opacity};padding:14px 18px;background:{bg_color};border-radius:8px;margin-bottom:8px;border:1px solid {border_color};box-shadow:{box_shadow};transition:all 0.2s;'>"
+            f"<div style='opacity:{opacity};padding:14px 18px;background:{bg_color};border-radius:8px;margin-bottom:8px;border:{border_width} solid {border_color};box-shadow:{box_shadow};transition:all 0.2s;'>"
             f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px'>"
-            f"<span style='font-weight:600;font-size:0.95rem;color:#FAFAFA'>{name}</span>"
-            f"<span style='font-size:0.75rem;color:#A1A1AA;font-family:JetBrains Mono,monospace;background:#27272A;padding:4px 8px;border-radius:4px;border:1px solid #3F3F46'>{eid}</span>"
+            f"<span style='font-weight:700;font-size:0.95rem;color:#1A1A1A'>{name}</span>"
+            f"<span style='font-size:0.75rem;color:#6B7280;font-family:JetBrains Mono,monospace;background:#F3F4F6;padding:4px 8px;border-radius:4px;border:1px solid #E5E7EB'>{eid}</span>"
             f"</div>"
-            f"<div style='font-size:0.8rem;color:#A1A1AA;display:flex;gap:24px;'>"
-            f"<span><span style='color:#71717A'>⬅️</span> &nbsp;<span style='color:#D4D4D8'>{pars[:75]}{'…' if len(pars)>75 else ''}</span></span>"
-            f"<span><span style='color:#71717A'>➡️</span> &nbsp;<span style='color:#D4D4D8'>{chils[:75]}{'…' if len(chils)>75 else ''}</span></span>"
+            f"<div style='font-size:0.8rem;color:#6B7280;display:flex;gap:24px; font-weight: 500;'>"
+            f"<span><span style='color:#9CA3AF'>⬅️</span> &nbsp;<span style='color:#4B5563'>{pars[:75]}{'…' if len(pars)>75 else ''}</span></span>"
+            f"<span><span style='color:#9CA3AF'>➡️</span> &nbsp;<span style='color:#4B5563'>{chils[:75]}{'…' if len(chils)>75 else ''}</span></span>"
             f"</div>"
             f"</div>",
             unsafe_allow_html=True
@@ -1004,7 +1009,7 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
             selected_ids.add(eid)
 
 # ── PASO 2: GENERAR ───────────────────────────────────────────────────────────
-st.markdown("<hr style='margin:40px 0 24px;border-color:#27272A'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:48px 0 24px;border-color:#E5E7EB'>", unsafe_allow_html=True)
 
 n_sel = len(selected_ids)
 
@@ -1017,21 +1022,21 @@ if n_sel > 0:
 
     badges_html = ""
     for rt, cnt in sorted(tipos_sel.items(), key=lambda x: RT_ORDER.get(x[0], 99)):
-        color_hex = RT_COLOR.get(rt, "71717A")
+        color_hex = RT_COLOR.get(rt, "6B7280")
         label = RT_LABEL.get(rt, rt)
         badges_html += (
-            "<span style='background:#" + color_hex + "22;color:#" + color_hex + ";border:1px solid #" + color_hex + "44;"
+            "<span style='background:#" + color_hex + "15;color:#" + color_hex + ";border:1px solid #" + color_hex + "30;"
             "padding:4px 12px;border-radius:12px;font-size:0.8rem;"
-            "font-weight:600;white-space:nowrap'>"
+            "font-weight:700;white-space:nowrap'>"
             + label + " (" + str(cnt) + ")"
             "</span> "
         )
 
     sel_label = "seleccionados" if n_sel != 1 else "seleccionado"
     resumen_html = (
-        "<div style='background:#18181B;border:1px solid #3F3F46;border-radius:12px;padding:16px 20px;"
-        "margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.1)'>"
-        "<span style='font-weight:600;color:#FAFAFA;white-space:nowrap;font-size:1.05rem'>📋 "
+        "<div style='background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;padding:16px 20px;"
+        "margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.04)'>"
+        "<span style='font-weight:700;color:#1A1A1A;white-space:nowrap;font-size:1.05rem'>📋 "
         + str(n_sel) + " " + sel_label + ":</span>"
         + badges_html
         + "</div>"
@@ -1063,40 +1068,40 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 @keyframes popin2{0%{transform:translate(-50%,-50%) scale(0);opacity:0}65%{transform:translate(-50%,-50%) scale(1.1);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @keyframes fadein2{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes overlay-fade{0%{opacity:1}78%{opacity:1}100%{opacity:0;pointer-events:none}}
-.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(9,9,11,0.95);animation:overlay-fade 4.4s ease .1s both;pointer-events:none;backdrop-filter:blur(6px)}
+.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(255,255,255,0.92);animation:overlay-fade 4.4s ease .1s both;pointer-events:none;backdrop-filter:blur(6px)}
 .py-road-svg{position:absolute;bottom:0;left:0;width:100%;height:32px}
 .py-road-line{animation:road-anim .35s linear infinite}
 .py-m1{position:absolute;bottom:32px;animation:ride1 3.4s cubic-bezier(.2,.8,.4,1) 0.0s both}
 .py-m2{position:absolute;bottom:44px;animation:ride2 3.4s cubic-bezier(.2,.8,.4,1) 0.5s both}
 .py-m3{position:absolute;bottom:24px;animation:ride3 3.4s cubic-bezier(.2,.8,.4,1) 1.0s both}
 .py-w{transform-origin:50% 50%;animation:wspin .22s linear infinite}
-.py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:70px;height:4px;background:linear-gradient(90deg,transparent,#EA005055);border-radius:2px}
-.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both;box-shadow:0 10px 30px rgba(234,0,80,0.4)}
-.py-msg2{position:absolute;top:calc(50% + 85px);left:50%;font-family:Inter,system-ui,sans-serif;font-size:1.3rem;font-weight:600;color:#ffffff;background:#18181B;padding:12px 36px;border-radius:30px;border:1px solid #3F3F46;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.2px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+.py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:70px;height:4px;background:linear-gradient(90deg,transparent,#EA005044);border-radius:2px}
+.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both;box-shadow:0 10px 30px rgba(234,0,80,0.3)}
+.py-msg2{position:absolute;top:calc(50% + 85px);left:50%;font-family:Inter,system-ui,sans-serif;font-size:1.3rem;font-weight:700;color:#1A1A1A;background:#FFFFFF;padding:12px 36px;border-radius:30px;border:1px solid #E5E7EB;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.2px;box-shadow:0 8px 24px rgba(0,0,0,0.1)}
 </style>
 <div class="py-overlay">
   <svg class="py-road-svg">
-    <rect width="100%" height="32" fill="#09090B"/>
-    <line x1="0" y1="8" x2="100%" y2="8" stroke="#27272A" stroke-width="1"/>
-    <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".5"/>
-    <line x1="0" y1="31" x2="100%" y2="31" stroke="#27272A" stroke-width="1"/>
+    <rect width="100%" height="32" fill="#F4F5F7"/>
+    <line x1="0" y1="8" x2="100%" y2="8" stroke="#E5E7EB" stroke-width="1"/>
+    <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".6"/>
+    <line x1="0" y1="31" x2="100%" y2="31" stroke="#E5E7EB" stroke-width="1"/>
   </svg>
   <div class="py-m1"><div style="position:relative"><div class="py-trail"></div>
     <svg width="130" height="68" viewBox="0 0 110 58">
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".75"/>
-      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#27272A"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#1A1A1A"/>
       <ellipse cx="36" cy="13" rx="10" ry="7" fill="#111"/>
       <ellipse cx="39" cy="14" rx="4" ry="3" fill="#EA0050"/>
       <rect x="30" y="19" width="16" height="9" rx="3" fill="#111"/>
       <rect x="22" y="18" width="16" height="14" rx="2" fill="#EA0050" stroke="#fff" stroke-width="1.2"/>
       <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
-      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#A1A1AA"/>
-      <line x1="76" y1="29" x2="85" y2="42" stroke="#52525B" stroke-width="2"/>
-      <line x1="29" y1="30" x2="20" y2="42" stroke="#52525B" stroke-width="2"/>
-      <g transform="translate(85,43)"><circle r="11" fill="#09090B"/><circle r="8" fill="#27272A"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#71717A" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#71717A" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#52525B" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#52525B" stroke-width="1"/></g><circle r="3" fill="#EA0050"/></g>
-      <g transform="translate(20,43)"><circle r="12" fill="#09090B"/><circle r="9" fill="#27272A"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#71717A" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#71717A" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#52525B" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#52525B" stroke-width="1"/></g><circle r="3.5" fill="#EA0050"/></g>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#6B7280"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#9CA3AF" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#9CA3AF" stroke-width="2"/>
+      <g transform="translate(85,43)"><circle r="11" fill="#F4F5F7"/><circle r="8" fill="#1A1A1A"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-4.6" y1="-4.6" x2="4.6" y2="4.6" stroke="#9CA3AF" stroke-width="1"/><line x1="4.6" y1="-4.6" x2="-4.6" y2="4.6" stroke="#9CA3AF" stroke-width="1"/></g><circle r="3" fill="#EA0050"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#F4F5F7"/><circle r="9" fill="#1A1A1A"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-5" y1="-5" x2="5" y2="5" stroke="#9CA3AF" stroke-width="1"/><line x1="5" y1="-5" x2="-5" y2="5" stroke="#9CA3AF" stroke-width="1"/></g><circle r="3.5" fill="#EA0050"/></g>
     </svg>
   </div></div>
   <div class="py-m2"><div style="position:relative"><div class="py-trail"></div>
@@ -1104,17 +1109,17 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#C0003A"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#A00030"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
-      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#27272A"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#1A1A1A"/>
       <ellipse cx="36" cy="13" rx="10" ry="7" fill="#EA0050"/>
       <ellipse cx="39" cy="14" rx="4" ry="3" fill="#fff" opacity=".6"/>
       <rect x="30" y="19" width="16" height="9" rx="3" fill="#EA0050"/>
       <rect x="22" y="18" width="16" height="14" rx="2" fill="#C0003A" stroke="#fff" stroke-width="1.2"/>
       <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
-      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#A1A1AA"/>
-      <line x1="76" y1="29" x2="85" y2="42" stroke="#52525B" stroke-width="2"/>
-      <line x1="29" y1="30" x2="20" y2="42" stroke="#52525B" stroke-width="2"/>
-      <g transform="translate(85,43)"><circle r="11" fill="#09090B"/><circle r="8" fill="#27272A"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#71717A" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#71717A" stroke-width="1.5"/></g><circle r="3" fill="#C0003A"/></g>
-      <g transform="translate(20,43)"><circle r="12" fill="#09090B"/><circle r="9" fill="#27272A"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#71717A" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#71717A" stroke-width="1.5"/></g><circle r="3.5" fill="#C0003A"/></g>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#6B7280"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#9CA3AF" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#9CA3AF" stroke-width="2"/>
+      <g transform="translate(85,43)"><circle r="11" fill="#F4F5F7"/><circle r="8" fill="#1A1A1A"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#D1D5DB" stroke-width="1.5"/></g><circle r="3" fill="#C0003A"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#F4F5F7"/><circle r="9" fill="#1A1A1A"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#D1D5DB" stroke-width="1.5"/></g><circle r="3.5" fill="#C0003A"/></g>
     </svg>
   </div></div>
   <div class="py-m3"><div style="position:relative"><div class="py-trail"></div>
@@ -1122,17 +1127,17 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <rect x="20" y="14" width="56" height="18" rx="7" fill="#EA0050"/>
       <polygon points="76,14 90,20 90,28 76,32" fill="#C0003A"/>
       <polygon points="76,14 84,10 90,14 88,14 78,14" fill="#cceeff" opacity=".7"/>
-      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#27272A"/>
+      <rect x="86" y="11" width="3" height="11" rx="1.5" fill="#1A1A1A"/>
       <ellipse cx="36" cy="13" rx="10" ry="7" fill="#222"/>
       <ellipse cx="39" cy="14" rx="4" ry="3" fill="#EA0050"/>
       <rect x="30" y="19" width="16" height="9" rx="3" fill="#222"/>
       <rect x="22" y="18" width="16" height="14" rx="2" fill="#EA0050" stroke="#fff" stroke-width="1.2"/>
       <text x="30" y="28.5" font-size="6.5" fill="white" text-anchor="middle" font-weight="800" font-family="Arial Black,Arial">PeYa</text>
-      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#A1A1AA"/>
-      <line x1="76" y1="29" x2="85" y2="42" stroke="#52525B" stroke-width="2"/>
-      <line x1="29" y1="30" x2="20" y2="42" stroke="#52525B" stroke-width="2"/>
-      <g transform="translate(85,43)"><circle r="11" fill="#09090B"/><circle r="8" fill="#27272A"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#71717A" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#71717A" stroke-width="1.5"/></g><circle r="3" fill="#EA0050"/></g>
-      <g transform="translate(20,43)"><circle r="12" fill="#09090B"/><circle r="9" fill="#27272A"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#71717A" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#71717A" stroke-width="1.5"/></g><circle r="3.5" fill="#EA0050"/></g>
+      <rect x="16" y="26" width="10" height="3" rx="1.5" fill="#6B7280"/>
+      <line x1="76" y1="29" x2="85" y2="42" stroke="#9CA3AF" stroke-width="2"/>
+      <line x1="29" y1="30" x2="20" y2="42" stroke="#9CA3AF" stroke-width="2"/>
+      <g transform="translate(85,43)"><circle r="11" fill="#F4F5F7"/><circle r="8" fill="#1A1A1A"/><g class="py-w"><line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#D1D5DB" stroke-width="1.5"/></g><circle r="3" fill="#EA0050"/></g>
+      <g transform="translate(20,43)"><circle r="12" fill="#F4F5F7"/><circle r="9" fill="#1A1A1A"/><g class="py-w"><line x1="0" y1="-7" x2="0" y2="7" stroke="#D1D5DB" stroke-width="1.5"/><line x1="-7" y1="0" x2="7" y2="0" stroke="#D1D5DB" stroke-width="1.5"/></g><circle r="3.5" fill="#EA0050"/></g>
     </svg>
   </div></div>
   <div class="py-check2">
@@ -1157,5 +1162,5 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         import traceback
         st.code(traceback.format_exc())
 
-st.markdown("<hr style='margin:32px 0;border-color:#27272A'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:32px 0;border-color:#E5E7EB'>", unsafe_allow_html=True)
 st.caption("Simetrik Documentation · PeYa Finance Operations & Payments · v2.2 · Jef")
