@@ -10,13 +10,15 @@ from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", layout="wide")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONSTANTES (Paleta Excel Claro Corporativo PeYa)
+# CONSTANTES (Paleta Excel - Sobria, Profesional y Corporativa PeYa)
 # ══════════════════════════════════════════════════════════════════════════════
 C = {
-    "red":    "EA0050", "white": "FFFFFF", "grey":  "F9FAFB", # Zebra súper sutil
-    "dark":   "2B2B2B", "border":"E5E7EB", "blue":  "2563EB", 
-    "teal":   "0D9488", "amber": "D97706", "purple":"7C3AED",
-    "green":  "16A34A", "slate": "475569", "rose":  "E11D48", 
+    "red":    "A6192E", # PeYa Crimson (Rojo oscuro corporativo)
+    "white":  "FFFFFF", 
+    "grey":   "F8F9FA", # Zebra muy tenue y profesional
+    "dark":   "1F1F1F", # Casi negro para textos y header de índice
+    "border": "D1D5DB", # Bordes definidos pero suaves
+    "slate":  "4B5563", # Gris medio para etiquetas de metadatos
 }
 
 RT_LABEL = {
@@ -30,16 +32,16 @@ RT_LABEL = {
     "cumulative_balance":      "📈 Balance Acumulado",
 }
 
-# Colores únicos por tipo de recurso
+# Tonos "Muted" (apagados/desaturados) para que el Excel no encandile
 RT_COLOR = {
-    "native":                  "3B82F6", 
-    "source_union":            "0D9488", 
-    "source_group":            "D97706", 
-    "reconciliation":          "EA0050", # PeYa Red
-    "advanced_reconciliation": "7C3AED", # Un solo violeta para todo el recurso
-    "consolidation":           "475569", 
-    "resource_join":           "16A34A", 
-    "cumulative_balance":      "16A34A", 
+    "native":                  "2B4C7E", # Azul Acero apagado
+    "source_union":            "2B6660", # Verde Mar apagado
+    "source_group":            "8A5A2B", # Bronce/Marrón apagado
+    "reconciliation":          "A6192E", # Rojo PeYa Profundo (Crimson)
+    "advanced_reconciliation": "543E62", # Ciruela/Berenjena apagado (reemplaza al violeta neón)
+    "consolidation":           "4A4F54", # Pizarra Oscuro
+    "resource_join":           "365C42", # Verde Bosque apagado
+    "cumulative_balance":      "365C42", # Verde Bosque apagado
 }
 
 # Orden de tipos para sorting
@@ -50,7 +52,7 @@ RT_ORDER = {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HELPERS OPENPYXL (Refactorizados para evitar MergedCell Errors)
+# HELPERS OPENPYXL (Con fix para bordes en celdas combinadas)
 # ══════════════════════════════════════════════════════════════════════════════
 def mk_border():
     t = Side(border_style="thin", color=C["border"])
@@ -480,7 +482,7 @@ def generar_excel(data, selected_ids):
 
             lnk = ws.cell(row_n, 7, "Ver →")
             lnk.hyperlink = f"#'{map_hojas[eid]}'!A1"
-            lnk.font = Font(name='Calibri', color="0D47A1", underline="single", size=9)
+            lnk.font = Font(name='Calibri', color="2563EB", underline="single", size=9)
             lnk.border = mk_border()
             ws.row_dimensions[row_n].height = 15
 
@@ -492,7 +494,7 @@ def generar_excel(data, selected_ids):
             eid  = res.get('export_id')
             rt   = res.get('resource_type', '')
             name = res.get('name', '')
-            tc   = RT_COLOR.get(rt, C["dark"])  # Color de la temática de ESTE recurso
+            tc   = RT_COLOR.get(rt, C["dark"])  # Color sobrio de la temática de ESTE recurso
             COLS = 5
 
             ws = wb.create_sheet(map_hojas[eid])
@@ -626,9 +628,9 @@ def generar_excel(data, selected_ids):
             if sg:
                 row = section_title(ws, row, "📊  CONFIGURACIÓN DE AGRUPACIÓN (GROUP BY)", bg=tc, cols=COLS)
                 group_cols, agg_vals = parse_source_group(sg, col_map)
-                row = meta_row(ws, row, "GROUP BY (dimensiones)", " | ".join(group_cols) or "—", cols=COLS, bg_val="FFF3E0", bg_label=tc)
+                row = meta_row(ws, row, "GROUP BY (dimensiones)", " | ".join(group_cols) or "—", cols=COLS, bg_val=C["grey"], bg_label=tc)
                 agg_str = "  |  ".join(f"{fn}( {col} )" for fn, col in agg_vals)
-                row = meta_row(ws, row, "Agregaciones (métricas)", agg_str or "—", cols=COLS, bg_val="FFF3E0", bg_label=tc)
+                row = meta_row(ws, row, "Agregaciones (métricas)", agg_str or "—", cols=COLS, bg_val=C["grey"], bg_label=tc)
                 row = meta_row(ws, row, "Acumulativo", "Sí" if sg.get('is_accumulative') else "No", cols=COLS, bg_label=tc)
                 row += 1
 
@@ -690,7 +692,7 @@ def generar_excel(data, selected_ids):
                     c5 = ws.cell(row=row, column=5); c5.value = usage_text
                     for c in [c1, c2, c3, c4]:
                         sc(c, bg=bg, size=9, va='top', wrap=True)
-                    sc(c5, bg=bg, size=9, va='top', wrap=True, color="16A34A" if usages else "64748B")
+                    sc(c5, bg=bg, size=9, va='top', wrap=True, color="365C42" if usages else "4B5563")
                     ws.merge_cells(f'B{row}:D{row}')
                     ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
@@ -1010,7 +1012,6 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
         checked = ca.checkbox("", value=st.session_state.sel.get(eid, True), key=f"chk_{eid}")
         st.session_state.sel[eid] = checked
         
-        # Tarjeta "World-Class" Modo Claro PeYa
         opacity = "1" if checked else "0.55"
         bg_color = "#FFFFFF" if checked else "#F9FAFB"
         border_color = "#EA0050" if checked else "#E5E7EB"
