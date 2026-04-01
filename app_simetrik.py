@@ -793,51 +793,105 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 
-/* Fuente global Roboto */
+/* ── DARK MODE BASE ── */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"],
+.stApp, .main, section[data-testid="stSidebar"] {
+    background-color: #18181B !important;
+    color: #E4E4E7 !important;
+}
+[data-testid="stHeader"] { background-color: #18181B !important; }
+.block-container { background-color: #18181B !important; padding-top: 1.5rem !important; }
+
+/* ── TIPOGRAFIA ── */
 html, body, [class*="css"], .stMarkdown, .stCaption,
 .stMetric, .stButton, .stDownloadButton,
 div[data-testid], p, span, label, h1, h2, h3, h4 {
     font-family: 'Roboto', sans-serif !important;
+    color: #E4E4E7 !important;
 }
-
-/* Monospace para IDs */
 code, .font-mono { font-family: 'Roboto Mono', monospace !important; }
 
-/* Layout */
-.block-container { padding-top: 1.5rem !important; }
+/* ── METRIC CARDS ── */
+[data-testid="stMetric"] { background: #27272A !important; border-radius: 10px !important; padding: 12px !important; }
+[data-testid="stMetricLabel"] p { color: #A1A1AA !important; }
+[data-testid="stMetricValue"] { color: #F4F4F5 !important; }
 
-/* Fix uploader button overlap — hide the internal text node that duplicates */
+/* ── SEPARADORES ── */
+hr { border-color: #3F3F46 !important; }
+
+/* ── FILE UPLOADER ── */
+div[data-testid="stFileUploader"] section {
+    border: 1.5px dashed #EA005077 !important;
+    border-radius: 10px !important;
+    background: #27272A !important;
+}
+div[data-testid="stFileUploader"] section:hover {
+    border-color: #EA0050 !important;
+    background: #2D1A20 !important;
+}
 div[data-testid="stFileUploader"] section button span { display: none !important; }
+div[data-testid="stFileUploader"] section button {
+    background: #3F3F46 !important;
+    color: #E4E4E7 !important;
+    border: none !important;
+    border-radius: 6px !important;
+}
 div[data-testid="stFileUploader"] section button::after {
     content: 'Buscar archivo';
     font-family: 'Roboto', sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
+    color: #E4E4E7;
 }
-div[data-testid="stFileUploader"] section {
-    border: 1.5px dashed #EA005055 !important;
-    border-radius: 10px !important;
-    background: transparent !important;
-}
-div[data-testid="stFileUploader"] section:hover {
-    border-color: #EA0050 !important;
-    background: rgba(234,0,80,0.03) !important;
-}
+div[data-testid="stFileUploader"] small,
+div[data-testid="stFileUploader"] p { color: #A1A1AA !important; }
 
-/* Progress bar */
+/* ── MULTISELECT ── */
+[data-testid="stMultiSelect"] > div > div {
+    background: #27272A !important;
+    border-color: #3F3F46 !important;
+    color: #E4E4E7 !important;
+}
+span[data-baseweb="tag"] { background: #3F3F46 !important; color: #E4E4E7 !important; }
+
+/* ── CHECKBOXES ── */
+[data-testid="stCheckbox"] label { color: #E4E4E7 !important; }
+
+/* ── PROGRESS BAR ── */
 .stProgress > div > div { background: #EA0050 !important; }
+.stProgress > div { background: #3F3F46 !important; }
 
-/* Botón primary */
+/* ── SUCCESS / ERROR / WARNING ── */
+[data-testid="stAlert"] { background: #27272A !important; border-color: #3F3F46 !important; }
+div[data-testid="stSuccess"] { background: #14261A !important; border-color: #166534 !important; }
+div[data-testid="stError"]   { background: #2D1A1A !important; border-color: #991B1B !important; }
+
+/* ── CAPTIONS ── */
+.stCaption, [data-testid="stCaptionContainer"] p { color: #71717A !important; }
+
+/* ── BOTÓN PRIMARY ── */
 div[data-testid="stButton"] button[kind="primary"] {
     background: #EA0050 !important;
     border: none !important;
     font-size: 1rem !important;
     font-weight: 500 !important;
-    letter-spacing: 0.3px;
     font-family: 'Roboto', sans-serif !important;
+    color: #fff !important;
 }
 div[data-testid="stButton"] button[kind="primary"]:hover { background: #C0003A !important; }
-div[data-testid="stDownloadButton"] button { font-family: 'Roboto', sans-serif !important; }
+div[data-testid="stDownloadButton"] button {
+    font-family: 'Roboto', sans-serif !important;
+    background: #EA0050 !important;
+    color: #fff !important;
+    border: none !important;
+}
+div[data-testid="stDownloadButton"] button:hover { background: #C0003A !important; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #27272A; }
+::-webkit-scrollbar-thumb { background: #52525B; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #71717A; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -865,14 +919,14 @@ up = st.file_uploader(
 
 if not up:
     st.markdown("""
-    <div style='background:#F8F9FA;border:2px dashed #dee2e6;border-radius:12px;
+    <div style='background:#27272A;border:2px dashed #EA005055;border-radius:12px;
         padding:32px;text-align:center;margin-top:8px'>
         <div style='font-size:2rem;margin-bottom:8px'>📂</div>
-        <p style='color:#666;font-size:0.95rem;margin:0'>
-            Arrastra el JSON aquí o usá el botón de arriba para seleccionarlo
+        <p style='color:#A1A1AA;font-size:0.95rem;margin:0'>
+            Arrastra el JSON aquí o usa el botón para seleccionarlo
         </p>
-        <p style='color:#aaa;font-size:0.8rem;margin:6px 0 0'>
-            En Simetrik: Flujo → ⚙️ Configuración → Exportar JSON
+        <p style='color:#71717A;font-size:0.8rem;margin:6px 0 0'>
+            En Simetrik: Flujo → Configuracion → Exportar JSON
         </p>
     </div>""", unsafe_allow_html=True)
     st.stop()
@@ -914,9 +968,9 @@ _nombre_display = up.name if len(up.name) <= 30 else up.name[:27] + "…"
 
 def _metric_card(label, value, color="#EA0050"):
     return (
-        "<div style='background:#fff;border:1px solid #f0f0f0;border-radius:10px;"
+        "<div style='background:#27272A;border:1px solid #3F3F46;border-radius:10px;"
         "padding:12px 16px;text-align:center'>"
-        "<div style='font-size:0.72rem;color:#999;font-family:Roboto,sans-serif;"
+        "<div style='font-size:0.72rem;color:#A1A1AA;font-family:Roboto,sans-serif;"
         "margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px'>" + label + "</div>"
         "<div style='font-size:1.6rem;font-weight:700;color:" + color + ";font-family:Roboto,sans-serif;line-height:1'>"
         + str(value) + "</div></div>"
@@ -930,11 +984,11 @@ _cards_html = (
     + _metric_card("Agrupaciones", _agrupaciones, RT_COLOR['source_group'])
     + _metric_card("Conc. Std", _recons_std, RT_COLOR['reconciliation'])
     + _metric_card("Conc. Avz", _recons_adv, RT_COLOR['advanced_reconciliation'])
-    + ("<div style='background:#fff;border:1px solid #f0f0f0;border-radius:10px;"
+    + ("<div style='background:#27272A;border:1px solid #3F3F46;border-radius:10px;"
        "padding:12px 16px;text-align:left'>"
-       "<div style='font-size:0.72rem;color:#999;font-family:Roboto,sans-serif;"
+       "<div style='font-size:0.72rem;color:#A1A1AA;font-family:Roboto,sans-serif;"
        "margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px'>JSON cargado</div>"
-       "<div style='font-size:0.82rem;font-weight:600;color:#333;font-family:Roboto,sans-serif;"
+       "<div style='font-size:0.82rem;font-weight:600;color:#E4E4E7;font-family:Roboto,sans-serif;"
        "word-break:break-all;line-height:1.3'>" + _nombre_display + "</div></div>")
     + "</div>"
 )
@@ -1016,7 +1070,7 @@ for rt in sorted(tipo_groups.keys(), key=lambda x: RT_ORDER.get(x, 99)):
             f"<div style='opacity:{opacity};padding:5px 0'>"
             f"<span style='font-weight:600;font-size:0.9rem;color:#1a1a1a'>{name}</span>"
             f"&nbsp;&nbsp;<span style='font-size:0.75rem;color:#999;font-family:monospace'>{eid}</span><br>"
-            f"<span style='font-size:0.75rem;color:#777'>⬅️ {pars[:80]}{'…' if len(pars)>80 else ''}"
+            f"<span style='font-size:0.75rem;color:#A1A1AA'>⬅️ {pars[:80]}{'…' if len(pars)>80 else ''}"
             f"&nbsp;&nbsp;➡️ {chils[:80]}{'…' if len(chils)>80 else ''}</span>"
             f"</div>",
             unsafe_allow_html=True
@@ -1052,9 +1106,9 @@ if n_sel > 0:
 
     sel_label = "seleccionados" if n_sel != 1 else "seleccionado"
     resumen_html = (
-        "<div style='background:#F8F9FA;border-radius:10px;padding:12px 16px;"
+        "<div style='background:#27272A;border-radius:10px;padding:12px 16px;"
         "margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap'>"
-        "<span style='font-weight:700;color:#333;white-space:nowrap'>📋 "
+        "<span style='font-weight:700;color:#E4E4E7;white-space:nowrap'>📋 "
         + str(n_sel) + " " + sel_label + ":</span>"
         + badges_html
         + "</div>"
