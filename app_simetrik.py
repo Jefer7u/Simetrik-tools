@@ -13,12 +13,16 @@ st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", lay
 # CONSTANTES (Paleta Excel - Sobria, Profesional y Corporativa PeYa)
 # ══════════════════════════════════════════════════════════════════════════════
 C = {
-    "red":    "A6192E", # PeYa Crimson (Rojo oscuro corporativo)
-    "white":  "FFFFFF", 
-    "grey":   "F8F9FA", # Zebra muy tenue y profesional
-    "dark":   "1F1F1F", # Casi negro para textos y header de índice
-    "border": "D1D5DB", # Bordes definidos pero suaves
-    "slate":  "4B5563", # Gris medio para etiquetas de metadatos
+    # Paleta PeYa — limpia, corporativa, modo claro
+    "red":    "EA0050",  # Rojo PeYa oficial — headers principales
+    "red2":   "C0003A",  # Rojo PeYa oscuro — subsecciones
+    "white":  "FFFFFF",  # Blanco — filas impares
+    "grey":   "FDF0F3",  # Rosa muy tenue PeYa — filas pares (zebra suave)
+    "grey2":  "F9FAFB",  # Gris neutro — zebra alternativa en secciones neutras
+    "dark":   "1A1A2E",  # Azul muy oscuro — header índice y pie
+    "border": "E5E7EB",  # Gris suave — bordes de celdas
+    "slate":  "6B7280",  # Gris medio — labels de metadatos
+    "blue":   "1D4ED8",  # Azul links
 }
 
 RT_LABEL = {
@@ -32,16 +36,16 @@ RT_LABEL = {
     "cumulative_balance":      "📈 Balance Acumulado",
 }
 
-# Tonos "Muted" (apagados/desaturados) para que el Excel no encandile
+# Paleta PeYa — un color dominante por tipo, tonos oscuros sobre blanco
 RT_COLOR = {
-    "native":                  "2B4C7E", # Azul Acero apagado
-    "source_union":            "2B6660", # Verde Mar apagado
-    "source_group":            "8A5A2B", # Bronce/Marrón apagado
-    "reconciliation":          "A6192E", # Rojo PeYa Profundo (Crimson)
-    "advanced_reconciliation": "543E62", # Ciruela/Berenjena apagado (reemplaza al violeta neón)
-    "consolidation":           "4A4F54", # Pizarra Oscuro
-    "resource_join":           "365C42", # Verde Bosque apagado
-    "cumulative_balance":      "365C42", # Verde Bosque apagado
+    "native":                  "1D4ED8",  # Azul cobalto — Fuentes
+    "source_union":            "0F766E",  # Verde azulado — Uniones
+    "source_group":            "92400E",  # Ámbar oscuro — Agrupaciones
+    "reconciliation":          "EA0050",  # Rojo PeYa — Conciliación estándar
+    "advanced_reconciliation": "6D28D9",  # Violeta oscuro — Conciliación avanzada
+    "consolidation":           "374151",  # Gris pizarra — Consolidación
+    "resource_join":           "065F46",  # Verde esmeralda — Join
+    "cumulative_balance":      "065F46",  # Verde esmeralda — Balance
 }
 
 # Orden de tipos para sorting
@@ -72,12 +76,13 @@ def hdr(cell, text, bg=C["dark"]):
        ha='center', va='center', wrap=False)
 
 def section_title(ws, row, text, bg=C["red"], cols=5):
-    # Asignar valores y bordes ANTES de hacer merge
+    # Sub-secciones (texto con sangría) usan red2 automáticamente
+    effective_bg = C["red2"] if bg == C["red"] and text.startswith("  ") else bg
     for i in range(1, cols + 1):
         c = ws.cell(row=row, column=i)
         if i == 1: c.value = text
-        sc(c, bg=bg, bold=True, color=C["white"], size=10, ha='left', va='center', wrap=False)
-    
+        sc(c, bg=effective_bg, bold=True, color=C["white"], size=10,
+           ha='left', va='center', wrap=False)
     ws.merge_cells(f'A{row}:{chr(64+cols)}{row}')
     ws.row_dimensions[row].height = 20
     return row + 1
@@ -482,7 +487,7 @@ def generar_excel(data, selected_ids):
 
             lnk = ws.cell(row_n, 7, "Ver →")
             lnk.hyperlink = f"#'{map_hojas[eid]}'!A1"
-            lnk.font = Font(name='Calibri', color="2563EB", underline="single", size=9)
+            lnk.font = Font(name='Calibri', color=C["blue"], underline="single", size=9)
             lnk.border = mk_border()
             ws.row_dimensions[row_n].height = 15
 
@@ -1094,7 +1099,7 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 @keyframes popin2{0%{transform:translate(-50%,-50%) scale(0);opacity:0}65%{transform:translate(-50%,-50%) scale(1.1);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @keyframes fadein2{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes overlay-fade{0%{opacity:1}78%{opacity:1}100%{opacity:0;pointer-events:none}}
-.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(255,255,255,0.92);animation:overlay-fade 4.4s ease .1s both;pointer-events:none;backdrop-filter:blur(6px)}
+.py-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;background:rgba(15,15,20,0.88);animation:overlay-fade 4.4s ease .1s both;pointer-events:none;backdrop-filter:blur(4px)}
 .py-road-svg{position:absolute;bottom:0;left:0;width:100%;height:32px}
 .py-road-line{animation:road-anim .35s linear infinite}
 .py-m1{position:absolute;bottom:32px;animation:ride1 3.4s cubic-bezier(.2,.8,.4,1) 0.0s both}
@@ -1102,15 +1107,15 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
 .py-m3{position:absolute;bottom:24px;animation:ride3 3.4s cubic-bezier(.2,.8,.4,1) 1.0s both}
 .py-w{transform-origin:50% 50%;animation:wspin .22s linear infinite}
 .py-trail{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:70px;height:4px;background:linear-gradient(90deg,transparent,#EA005044);border-radius:2px}
-.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both;box-shadow:0 10px 30px rgba(234,0,80,0.3)}
-.py-msg2{position:absolute;top:calc(50% + 85px);left:50%;font-family:Inter,system-ui,sans-serif;font-size:1.3rem;font-weight:700;color:#1A1A1A;background:#FFFFFF;padding:12px 36px;border-radius:30px;border:1px solid #E5E7EB;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.2px;box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+.py-check2{position:absolute;top:50%;left:50%;width:110px;height:110px;background:#EA0050;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:popin2 .6s cubic-bezier(.175,.885,.32,1.275) .3s both;box-shadow:0 12px 40px rgba(234,0,80,0.6)}
+.py-msg2{position:absolute;top:calc(50% + 85px);left:50%;font-family:Inter,system-ui,sans-serif;font-size:1.2rem;font-weight:700;color:#FFFFFF;background:#EA0050;padding:12px 36px;border-radius:30px;border:none;white-space:nowrap;animation:fadein2 .4s ease .8s both;letter-spacing:.3px;box-shadow:0 8px 32px rgba(234,0,80,0.4)}
 </style>
 <div class="py-overlay">
   <svg class="py-road-svg">
-    <rect width="100%" height="32" fill="#F4F5F7"/>
-    <line x1="0" y1="8" x2="100%" y2="8" stroke="#E5E7EB" stroke-width="1"/>
+    <rect width="100%" height="32" fill="#111118"/>
+    <line x1="0" y1="8" x2="100%" y2="8" stroke="#2A2A35" stroke-width="1"/>
     <line class="py-road-line" x1="0" y1="16" x2="100%" y2="16" stroke="#EA0050" stroke-width="2.5" stroke-dasharray="36 24" opacity=".6"/>
-    <line x1="0" y1="31" x2="100%" y2="31" stroke="#E5E7EB" stroke-width="1"/>
+    <line x1="0" y1="31" x2="100%" y2="31" stroke="#2A2A35" stroke-width="1"/>
   </svg>
   <div class="py-m1"><div style="position:relative"><div class="py-trail"></div>
     <svg width="130" height="68" viewBox="0 0 110 58">
