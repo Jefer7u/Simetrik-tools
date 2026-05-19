@@ -4,6 +4,8 @@ import pandas as pd
 import io
 import os
 import re
+import base64
+import streamlit.components.v1 as components
 from datetime import datetime
 from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 
@@ -669,6 +671,75 @@ def generar_excel(data, selected_ids):
                     ws.row_dimensions[row].height = row_height(n_lines)
                     row += 1
                 row += 1
+                
+                # MAPEO DE COLUMNAS DE UNIÓN
+                union_cols = su.get('union_columns', [])
+                union_cells = su.get('union_cells', [])
+                union_segments = su.get('union_segments', [])
+
+                if union_cols and union_cells:
+                    row = section_title(ws, row, "🔀  MAPEO DE COLUMNAS DE UNIÓN", bg=tc, cols=COLS)
+                    for col_n, h in enumerate(["COLUMNA DESTINO (UNIÓN)", "FUENTE (RECURSO)", "COLUMNA ORIGEN", "ESTADO"], 1):
+                        hdr(ws.cell(row=row, column=col_n), h, bg=tc)
+                    hdr(ws.cell(row=row, column=5), "", bg=tc)
+                    ws.merge_cells(f'D{row}:E{row}')
+                    ws.row_dimensions[row].height = 18
+                    row += 1
+
+                    seg_lookup = {}
+                    for us in union_segments:
+                        us_id = us.get('export_id')
+                        seg_id = us.get('segment_id')
+                        seg_info = seg_map.get(seg_id) or {}
+                        resource_name = seg_info.get('resource', seg_info.get('resource_name', f"ID:{seg_id}"))
+                        seg_lookup[us_id] = resource_name
+
+                    mapped_data = {}
+                    for uc in union_cols:
+                        dest_id = uc.get('destination_column_id')
+                        uc_id = uc.get('export_id')
+                        dest_name = col_map.get(dest_id, f"ID:{dest_id}")
+
+                        cells_for_col = [c for c in union_cells if c.get('union_column_id') == uc_id]
+                        for cell in cells_for_col:
+                            u_seg_id = cell.get('union_segment_id')
+                            origin_col_id = cell.get('origin_column_id')
+                            is_active = cell.get('is_active', False)
+
+                            source_name = seg_lookup.get(u_seg_id, f"Fuente:{u_seg_id}")
+                            orig_name = col_map.get(origin_col_id, f"ID:{origin_col_id}") if origin_col_id else "—"
+
+                            mapped_data.setdefault(dest_name, []).append({
+                                'source': source_name,
+                                'orig_col': orig_name,
+                                'active': "✅ Activa" if is_active else "❌ Inactiva"
+                            })
+
+                    for i, (dest_name, mappings) in enumerate(mapped_data.items()):
+                        bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+
+                        c1 = ws.cell(row=row, column=1); c1.value = dest_name
+                        sources = []
+                        origins = []
+                        actives = []
+                        for m in mappings:
+                            sources.append(m['source'])
+                            origins.append(m['orig_col'])
+                            actives.append(m['active'])
+
+                        c2 = ws.cell(row=row, column=2); c2.value = "\n".join(sources)
+                        c3 = ws.cell(row=row, column=3); c3.value = "\n".join(origins)
+                        c4 = ws.cell(row=row, column=4); c4.value = "\n".join(actives)
+                        c5 = ws.cell(row=row, column=5); c5.value = ""
+
+                        for c, al in [(c1,'left'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
+                            sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
+
+                        ws.merge_cells(f'D{row}:E{row}')
+                        ws.row_dimensions[row].height = row_height(len(mappings))
+                        row += 1
+                    row += 1
+
 
             segs_all = parse_segment_filters(res.get('segments', []), col_map)
             if segs_all:
@@ -833,15 +904,6 @@ div[data-testid="stButton"] button[kind="primary"]:hover {
     background: #C0003A !important; 
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(234, 0, 80, 0.3) !important;
-}
-div[data-testid="stDownloadButton"] button {
-    font-family: 'Inter', sans-serif !important;
-    background: #EA0050 !important;
-    color: #ffffff !important;
-    border: 1px solid #C0003A !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 12px rgba(234, 0, 80, 0.2) !important;
 }
 
 /* ── SCROLLBAR ── */
@@ -1079,7 +1141,7 @@ else:
 
 nombre_dl = "skt_doc_" + os.path.splitext(up.name)[0] + "_" + datetime.now().strftime('%Y-%m-%d_%H%M') + ".xlsx"
 
-if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
+if st.button("🚀  Generar documentación", type="primary", use_container_width=True):
     prog = st.progress(0, text="Iniciando...")
     try:
         prog.progress(15, text="Procesando recursos...")
@@ -1088,7 +1150,12 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
         excel_bytes = generar_excel(data, selected_ids)
         prog.progress(90, text="Aplicando estilos...")
         prog.progress(100, text="Listo.")
-        st.success("✅ Excel generado con **" + str(n_sel) + "** recursos documentados.")
+        st.success("✅ Documentación generada con **" + str(n_sel) + "** recursos.")
+        
+        # Codificamos el Excel a base64 para inyectarlo en el HTML
+        b64 = base64.b64encode(excel_bytes.getvalue()).decode()
+        dl_link = f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}"
+
         st.markdown("""
 <style>
 @keyframes ride1{0%{left:-180px;opacity:0}6%{opacity:1}85%{opacity:1}100%{left:110vw;opacity:0}}
@@ -1176,17 +1243,23 @@ if st.button("🚀  GENERAR EXCEL", type="primary", use_container_width=True):
       <polyline points="5,18 13,27 31,9" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </div>
-  <div class="py-msg2">Pedido listo, ya puedes descargarlo</div>
+  <div class="py-msg2">Pedido listo, la documentación se descargará automáticamente</div>
 </div>
 """, unsafe_allow_html=True)
-        st.download_button(
-            label="📥  Descargar Excel",
-            data=excel_bytes,
-            file_name=nombre_dl,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-            type="primary"
+        
+        # Componente que dispara la descarga automáticamente después de 1.2s para sincronizar con la animación
+        components.html(
+            f"""
+            <a id="auto_dl" href="{dl_link}" download="{nombre_dl}"></a>
+            <script>
+                setTimeout(function() {{
+                    document.getElementById('auto_dl').click();
+                }}, 1200);
+            </script>
+            """,
+            height=0
         )
+        
     except Exception as e:
         prog.empty()
         st.error(f"Error al generar el Excel: {e}")
