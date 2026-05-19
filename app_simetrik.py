@@ -15,12 +15,12 @@ st.set_page_config(page_title="Simetrik Docs  | PeYa", page_icon="🛵📄", lay
 # CONSTANTES (Paleta Excel - Sobria, Profesional y Corporativa PeYa)
 # ══════════════════════════════════════════════════════════════════════════════
 C = {
-    # Paleta PeYa — limpia, corporativa, modo claro
+    # Paleta corporativa
     "red":    "EA0050",  # Rojo PeYa oficial — headers principales
     "red2":   "C0003A",  # Rojo PeYa oscuro — subsecciones
-    "white":  "FFFFFF",  # Blanco — filas impares
-    "grey":   "FDF0F3",  # Rosa muy tenue PeYa — filas pares (zebra suave)
-    "grey2":  "F9FAFB",  # Gris neutro — zebra alternativa en secciones neutras
+    "white":  "FFFFFF",  # Blanco puro — filas impares
+    "grey":   "F2F2F2",  # Gris claro y 100% neutro — filas pares (zebra)
+    "grey2":  "E8E8E8",  # Gris un poco más oscuro
     "dark":   "1A1A2E",  # Azul muy oscuro — header índice y pie
     "border": "E5E7EB",  # Gris suave — bordes de celdas
     "slate":  "6B7280",  # Gris medio — labels de metadatos
@@ -58,7 +58,7 @@ RT_ORDER = {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HELPERS OPENPYXL (Con fix para bordes en celdas combinadas)
+# HELPERS OPENPYXL (Ajuste automático de celdas y bordes)
 # ══════════════════════════════════════════════════════════════════════════════
 def mk_border():
     t = Side(border_style="thin", color=C["border"])
@@ -102,11 +102,21 @@ def meta_row(ws, row, label, value, cols=5, bg_val=None, bg_label=C["slate"]):
         sc(c, bg=bg_val, size=9, va='center', wrap=True)
         
     ws.merge_cells(f'B{row}:{chr(64+cols)}{row}')
-    ws.row_dimensions[row].height = 14
+    
+    # Ajuste automático de altura para metadata
+    n_lines = val_str.count('\n') + 1 + (len(val_str) // 80)
+    ws.row_dimensions[row].height = max(14, n_lines * 13)
     return row + 1
 
-def row_height(n_lines, base=13):
-    return max(14, n_lines * base)
+def row_height(text, width=40, base=13):
+    """Calcula la altura de la fila basándose en saltos de línea y longitud del texto."""
+    if not text: return 14
+    text_str = str(text)
+    lines = text_str.split('\n')
+    total_lines = 0
+    for line in lines:
+        total_lines += max(1, len(line) // width + (1 if len(line) % width > 0 else 0))
+    return max(14, total_lines * base)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PARSERS
@@ -487,6 +497,7 @@ def generar_excel(data, selected_ids):
                                   color=RT_COLOR.get(rt, C["dark"]))
                 c.border = mk_border()
 
+            # Link interno seguro a las pestañas del mismo excel
             lnk = ws.cell(row_n, 7, "Ver →")
             lnk.hyperlink = f"#'{map_hojas[eid]}'!A1"
             lnk.font = Font(name='Calibri', color=C["blue"], underline="single", size=9)
@@ -540,7 +551,7 @@ def generar_excel(data, selected_ids):
                 row += 1
 
                 for i, side in enumerate(std['sides']):
-                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    bg = C["grey"] if i % 2 == 0 else C["white"]
                     trig = "  [TRIGGER]" if side['is_trigger'] else ""
                     c1 = ws.cell(row=row, column=1); c1.value = side['prefix'] + trig
                     c2 = ws.cell(row=row, column=2); c2.value = side['resource_name']
@@ -550,7 +561,7 @@ def generar_excel(data, selected_ids):
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
                     ws.merge_cells(f'D{row}:E{row}')
-                    ws.row_dimensions[row].height = row_height(side['group_filters'].count('\n') + 1)
+                    ws.row_dimensions[row].height = row_height(side['group_filters'], width=50)
                     row += 1
                 row += 1
 
@@ -567,16 +578,17 @@ def generar_excel(data, selected_ids):
                 row += 1
 
                 for i, rs in enumerate(std['rule_sets']):
-                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    bg = C["grey"] if i % 2 == 0 else C["white"]
+                    rules_txt = "\n".join(rs['rules'])
                     c1 = ws.cell(row=row, column=1); c1.value = rs['pos']
                     c2 = ws.cell(row=row, column=2); c2.value = rs['name']
-                    c3 = ws.cell(row=row, column=3); c3.value = "\n".join(rs['rules'])
+                    c3 = ws.cell(row=row, column=3); c3.value = rules_txt
                     c4 = ws.cell(row=row, column=4); c4.value = ""
                     c5 = ws.cell(row=row, column=5); c5.value = ""
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
                     ws.merge_cells(f'C{row}:E{row}')
-                    ws.row_dimensions[row].height = row_height(len(rs['rules']))
+                    ws.row_dimensions[row].height = row_height(rules_txt, width=50)
                     row += 1
                 row += 1
 
@@ -590,9 +602,9 @@ def generar_excel(data, selected_ids):
                 row += 1
 
                 for i, g in enumerate(adv_parsed['groups']):
-                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    bg = C["grey"] if i % 2 == 0 else C["white"]
                     segs_txt = "\n".join(g['segments']) if g['segments'] else "(sin segmentación interna)"
-                    n_lines = max(g['group_filters'].count('\n') + 1, len(g['segments']) if g['segments'] else 1)
+                    
                     c1 = ws.cell(row=row, column=1); c1.value = g['prefix']
                     c2 = ws.cell(row=row, column=2); c2.value = g['resource_name']
                     c3 = ws.cell(row=row, column=3); c3.value = g['group_name']
@@ -600,7 +612,10 @@ def generar_excel(data, selected_ids):
                     c5 = ws.cell(row=row, column=5); c5.value = segs_txt
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
-                    ws.row_dimensions[row].height = row_height(n_lines)
+                    
+                    h1 = row_height(g['group_filters'], width=22)
+                    h2 = row_height(segs_txt, width=36)
+                    ws.row_dimensions[row].height = max(h1, h2)
                     row += 1
                 row += 1
 
@@ -611,23 +626,24 @@ def generar_excel(data, selected_ids):
                 row += 1
 
                 for i, rs in enumerate(adv_parsed['rule_sets']):
-                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    bg = C["grey"] if i % 2 == 0 else C["white"]
                     name_txt = rs['name']
                     if rs['cross_type']: name_txt += "\n[" + rs['cross_type'] + "]"
                     if rs['new_ver']:    name_txt += "  ✦ new version"
 
                     seg_a = next((s.replace("Lado A: ", "") for s in rs['sweep'] if s.startswith("Lado A")), "—")
                     seg_b = next((s.replace("Lado B: ", "") for s in rs['sweep'] if s.startswith("Lado B")), "—")
+                    rules_txt = "\n".join(rs['rules'])
 
                     c1 = ws.cell(row=row, column=1); c1.value = rs['pos']
                     c2 = ws.cell(row=row, column=2); c2.value = name_txt
-                    c3 = ws.cell(row=row, column=3); c3.value = "\n".join(rs['rules'])
+                    c3 = ws.cell(row=row, column=3); c3.value = rules_txt
                     c4 = ws.cell(row=row, column=4); c4.value = seg_a
                     c5 = ws.cell(row=row, column=5); c5.value = seg_b
                     for c, al in [(c1,'center'),(c2,'left'),(c3,'left'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
-                    n_lines = max(len(rs['rules']), 1)
-                    ws.row_dimensions[row].height = row_height(n_lines)
+                    
+                    ws.row_dimensions[row].height = max(row_height(rules_txt, width=22), row_height(name_txt, width=22))
                     row += 1
                 row += 1
 
@@ -658,8 +674,8 @@ def generar_excel(data, selected_ids):
                     group_name    = seg_info.get('name', f"ID:{seg_id}")
                     filters_text  = fmt_filter_rules(seg_info.get('rules', []), col_map)
                     rol = "TRIGGER · " + (us.get('trigger_type') or '') if us.get('is_trigger') else "Fuente adicional"
-                    n_lines = max(filters_text.count('\n') + 1, 1)
-                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    
+                    bg = C["grey"] if i % 2 == 0 else C["white"]
                     c1 = ws.cell(row=row, column=1); c1.value = resource_name
                     c2 = ws.cell(row=row, column=2); c2.value = group_name
                     c3 = ws.cell(row=row, column=3); c3.value = rol
@@ -668,7 +684,7 @@ def generar_excel(data, selected_ids):
                     for c, al in [(c1,'left'),(c2,'left'),(c3,'center'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
                     ws.merge_cells(f'D{row}:E{row}')
-                    ws.row_dimensions[row].height = row_height(n_lines)
+                    ws.row_dimensions[row].height = row_height(filters_text, width=50)
                     row += 1
                 row += 1
                 
@@ -716,7 +732,7 @@ def generar_excel(data, selected_ids):
                             })
 
                     for i, (dest_name, mappings) in enumerate(mapped_data.items()):
-                        bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                        bg = C["grey"] if i % 2 == 0 else C["white"]
 
                         c1 = ws.cell(row=row, column=1); c1.value = dest_name
                         sources = []
@@ -736,10 +752,9 @@ def generar_excel(data, selected_ids):
                             sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
 
                         ws.merge_cells(f'D{row}:E{row}')
-                        ws.row_dimensions[row].height = row_height(len(mappings))
+                        ws.row_dimensions[row].height = row_height("\n".join(sources), width=22)
                         row += 1
                     row += 1
-
 
             segs_all = parse_segment_filters(res.get('segments', []), col_map)
             if segs_all:
@@ -753,24 +768,27 @@ def generar_excel(data, selected_ids):
                 ws.row_dimensions[row].height = 18
                 row += 1
                 for i, seg in enumerate(segs_all):
-                    bg = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    bg = C["grey"] if i % 2 == 0 else C["white"]
                     usages = seg_usage.get(seg['seg_id'], [])
                     if usages:
                         usage_lines = [u[0] + " (" + u[1] + ")" for u in usages]
                         usage_text = "\n".join(usage_lines)
                     else:
                         usage_text = "Sin uso en flujo activo"
-                    n_lines = max(len(seg['rules']), len(usages) if usages else 1)
+                    
+                    rules_txt = "\n".join(seg['rules'])
                     c1 = ws.cell(row=row, column=1); c1.value = seg['name']
-                    c2 = ws.cell(row=row, column=2); c2.value = "\n".join(seg['rules'])
+                    c2 = ws.cell(row=row, column=2); c2.value = rules_txt
                     c3 = ws.cell(row=row, column=3); c3.value = ""
                     c4 = ws.cell(row=row, column=4); c4.value = ""
                     c5 = ws.cell(row=row, column=5); c5.value = usage_text
+                    
                     for c in [c1, c2, c3, c4]:
                         sc(c, bg=bg, size=9, va='top', wrap=True)
                     sc(c5, bg=bg, size=9, va='top', wrap=True, color="365C42" if usages else "4B5563")
+                    
                     ws.merge_cells(f'B{row}:D{row}')
-                    ws.row_dimensions[row].height = row_height(n_lines)
+                    ws.row_dimensions[row].height = max(row_height(rules_txt, width=60), row_height(usage_text, width=36))
                     row += 1
                 row += 1
 
@@ -788,7 +806,8 @@ def generar_excel(data, selected_ids):
                     dtype    = col.get('data_format', '')
                     col_type = (col.get('column_type') or '').replace('_', ' ').upper()
                     logic    = parse_transformation_logic(col, res_map, col_map)
-                    bg       = C["grey"] if i % 2 == 0 else "FFFFFF"
+                    bg       = C["grey"] if i % 2 == 0 else C["white"]
+                    
                     c1 = ws.cell(row=row, column=1); c1.value = label
                     c2 = ws.cell(row=row, column=2); c2.value = dtype
                     c3 = ws.cell(row=row, column=3); c3.value = col_type
@@ -796,10 +815,12 @@ def generar_excel(data, selected_ids):
                     c5 = ws.cell(row=row, column=5); c5.value = ""
                     for c, al in [(c1,'left'),(c2,'center'),(c3,'center'),(c4,'left'),(c5,'left')]:
                         sc(c, bg=bg, size=9, va='top', wrap=True, ha=al)
+                        
                     ws.merge_cells(f'D{row}:E{row}')
-                    ws.row_dimensions[row].height = row_height(logic.count('\n') + 1)
+                    ws.row_dimensions[row].height = row_height(logic, width=50)
                     row += 1
 
+            # Anchos de columna predeterminados optimizados para wrap_text
             ws.column_dimensions['A'].width = 26
             ws.column_dimensions['B'].width = 22
             ws.column_dimensions['C'].width = 22
